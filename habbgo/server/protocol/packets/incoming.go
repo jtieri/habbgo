@@ -5,12 +5,19 @@ import (
 	"github.com/jtieri/HabbGo/habbgo/utils/encoding"
 )
 
+// IncomingPacket represents a client->server packet.
 type IncomingPacket struct {
-	Header string
-	HeaderId uint
-	Payload *bytes.Buffer
+	Header   string
+	HeaderId int
+	Payload  *bytes.Buffer
 }
 
+func NewIncoming(rawHeader []byte, rawPacket []byte) *IncomingPacket {
+	packet := &IncomingPacket{Header: string(rawHeader), HeaderId: encoding.DecodeB64(rawHeader), Payload: bytes.NewBuffer(rawPacket)}
+	return packet
+}
+
+// ReadB64 reads two bytes from the packets buffer and returns their Base64 decoded value as an integer.
 func (packet *IncomingPacket) ReadB64() int {
 	data := make([]byte, 2)
 	data[0], _ = packet.Payload.ReadByte()
@@ -18,11 +25,13 @@ func (packet *IncomingPacket) ReadB64() int {
 	return encoding.DecodeB64(data)
 }
 
+// ReadBytes advances the packets buffer i bytes and returns those i bytes in a slice.
 func (packet *IncomingPacket) ReadBytes(i int) []byte {
 	data := packet.Payload.Next(i)
 	return data
 }
 
+// ReadInt reads one integer from the packets buffer by decoding a Vl64 encoded sequence of bytes.
 func (packet *IncomingPacket) ReadInt() int {
 	data := packet.Bytes()
 	length := int(data[0] >> 3 & 7)
@@ -31,33 +40,24 @@ func (packet *IncomingPacket) ReadInt() int {
 	return value
 }
 
+// ReadBool reads one integer from the packets buffer and if it equals 1 returns true, otherwise returns false.
 func (packet *IncomingPacket) ReadBool() bool {
 	return packet.ReadInt() == 1
 }
 
-func (packet *IncomingPacket) Bytes() []byte {
-	return packet.Payload.Bytes()
+// ReadString reads two bytes from the packets buffer to get a length of n and then returns a string of n bytes.
+func (packet *IncomingPacket) ReadString() string {
+	length := packet.ReadB64()
+	message := packet.ReadBytes(length)
+	return string(message)
 }
 
-// VerifyIncoming verifies that an incoming packet is not some garbage or scripted value.
-// It will return true if the packet is acceptable, and false otherwise.
-func VerifyIncoming(rawPacket []byte) bool {
-	if len(rawPacket) > 5 {
-		buffer := bytes.Buffer{}
-		buffer.Write(rawPacket)
+// String returns the remaining bytes in the packets buffer as a string.
+func (packet *IncomingPacket) String() string {
+	return string(packet.Bytes())
+}
 
-		rawLen := make([]byte, 3)
-		for i := 0; i < 3; i++ {
-			rawLen[i], _ = buffer.ReadByte()
-		}
-		length := encoding.DecodeB64(rawLen)
-
-		if length == 0 || buffer.Len() < length {
-			return false
-		}
-
-		return true
-	}
-
-	return false
+// Bytes returns a slice containing the remaining bytes in the packets buffer.
+func (packet *IncomingPacket) Bytes() []byte {
+	return packet.Payload.Bytes()
 }
