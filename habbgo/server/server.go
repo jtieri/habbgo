@@ -5,16 +5,17 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type server struct {
 	host           string
-	port           uint16
+	port           int16
 	activeSessions []*Session
 }
 
 // New returns a pointer to a newly allocated server struct.
-func New(port uint16, host string) *server {
+func New(port int16, host string) *server {
 	server := &server{port: port, host: host}
 	return server
 }
@@ -25,7 +26,7 @@ func (server *server) Start() {
 	if err != nil {
 		log.Fatalf("There was an issue starting the game server on port %v.", server.port)
 	}
-	log.Printf("Successfully started the game server at %v:%v", server.host, server.port)
+	log.Printf("Successfully started the game server at %v", listener.Addr().String())
 	defer listener.Close()
 
 	// Main loop for handling connections
@@ -34,6 +35,7 @@ func (server *server) Start() {
 		if err != nil {
 			log.Println("Error trying to handle new connection.")
 			conn.Close()
+			continue
 		}
 
 		// Check that there aren't multiple sessions for a given IP address
@@ -49,6 +51,21 @@ func (server *server) Start() {
 		} else {
 			log.Printf("Too many concurrent connections from address %v \n", conn.LocalAddr().String())
 			conn.Close()
+		}
+	}
+}
+
+func (server *server) RemoveSession(session *Session) {
+	mux := &sync.Mutex{}
+	for i, activeSession := range server.activeSessions {
+		if activeSession.connection.LocalAddr().String() == session.connection.LocalAddr().String() {
+			mux.Lock()
+			server.activeSessions[i] = server.activeSessions[len(server.activeSessions)-1]
+			server.activeSessions[len(server.activeSessions)-1] = nil
+			server.activeSessions = server.activeSessions[:len(server.activeSessions)-1]
+			mux.Unlock()
+
+			log.Printf("There are now %v sessions connected to the server. ", len(server.activeSessions))
 		}
 	}
 }
