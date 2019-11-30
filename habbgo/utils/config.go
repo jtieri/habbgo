@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Server struct {
 		Host string `yaml:"host"`
-		Port uint16 `yaml:"port"`
+		Port int16  `yaml:"port"`
 	}
 	Database struct {
 	}
