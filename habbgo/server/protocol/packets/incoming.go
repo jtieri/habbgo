@@ -12,8 +12,8 @@ type IncomingPacket struct {
 	Payload  *bytes.Buffer
 }
 
-func NewIncoming(rawHeader []byte, rawPacket []byte) *IncomingPacket {
-	packet := &IncomingPacket{Header: string(rawHeader), HeaderId: encoding.DecodeB64(rawHeader), Payload: bytes.NewBuffer(rawPacket)}
+func NewIncoming(rawHeader []byte, payload *bytes.Buffer) *IncomingPacket {
+	packet := &IncomingPacket{Header: string(rawHeader), HeaderId: encoding.DecodeB64(rawHeader), Payload: payload}
 	return packet
 }
 

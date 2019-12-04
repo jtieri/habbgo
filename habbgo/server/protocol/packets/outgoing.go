@@ -15,7 +15,7 @@ type OutgoingPacket struct {
 // NewOutgoing returns a pointer to a newly allocated OutgoingPacket struct.
 // The two byte Base64 encoded header is written to the packets buffer on creation for quick composition of packets.
 func NewOutgoing(headerId int) *OutgoingPacket {
-	header := encoding.EncodeB64(headerId)
+	header := encoding.EncodeB64(headerId, 2)
 	packet := &OutgoingPacket{Header: string(header), HeaderId: headerId, Payload: bytes.NewBuffer(header)}
 	return packet
 }
@@ -66,4 +66,3 @@ func (packet *OutgoingPacket) WriteDelim(key []byte, delim []byte) {
 func (packet *OutgoingPacket) Finish() {
 	packet.Payload.WriteByte(1) // FUSEv0.2.0 server->client packet ending marker
 }
-
