@@ -8,8 +8,9 @@ import (
 
 type Config struct {
 	Server struct {
-		Host string `yaml:"host"`
-		Port int16  `yaml:"port"`
+		Host     string `yaml:"host"`
+		Port     int16  `yaml:"port"`
+		MaxConns int    `yaml:"maxconns"`
 	}
 	Database struct {
 	}
