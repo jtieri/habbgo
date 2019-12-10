@@ -62,6 +62,11 @@ func (packet *OutgoingPacket) WriteDelim(key []byte, delim []byte) {
 	packet.Payload.Write(delim)
 }
 
+// String returns the remaining bytes in the packets buffer as a string.
+func (packet *OutgoingPacket) String() string {
+	return string(packet.Payload.Bytes())
+}
+
 // Finish writes byte 0x01 to the packets buffer to signal the ending of a packet.
 func (packet *OutgoingPacket) Finish() {
 	packet.Payload.WriteByte(1) // FUSEv0.2.0 server->client packet ending marker
