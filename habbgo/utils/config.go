@@ -12,7 +12,9 @@ type Config struct {
 		Port     int16  `yaml:"port"`
 		MaxConns int    `yaml:"maxconns"`
 	}
-	Database struct {
+	Log struct {
+		Outgoing bool `yaml:"outgoing"`
+		Incoming bool `yaml:"incoming"`
 	}
 }
 

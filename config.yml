@@ -2,3 +2,6 @@ server:
   host:   "127.0.0.1"
   port:   11235
   maxconns: 2
+log:
+  outgoing: true
+  incoming: true
