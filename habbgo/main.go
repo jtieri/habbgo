@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	//log.Println(string(encoding.EncodeB64(6, 3)))
+	//log.Println(string(encoding.EncodeB64(206, 2)))
 	log.Println("Booting up HabbGo... ")
 	config := utils.LoadConfig()
-	gameServer := server.New(config.Server.Port, config.Server.Host, config.Server.MaxConns)
+	gameServer := server.New(&config)
 	gameServer.Start()
 	defer gameServer.Stop()
 }
