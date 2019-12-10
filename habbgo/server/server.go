@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"github.com/jtieri/HabbGo/habbgo/utils"
 	"log"
 	"net"
 	"os"
@@ -13,12 +14,18 @@ type server struct {
 	host           string
 	port           int16
 	maxConns       int
+	config *utils.Config
 	activeSessions []*Session
 }
 
 // New returns a pointer to a newly allocated server struct.
-func New(port int16, host string, maxConns int) *server {
-	server := &server{port: port, host: host, maxConns: maxConns}
+func New(config *utils.Config) *server {
+	server := &server{
+		port: config.Server.Port,
+		host: config.Server.Host,
+		maxConns: config.Server.MaxConns,
+		config: config,
+	}
 	return server
 }
 
