@@ -3,6 +3,8 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"github.com/jtieri/HabbGo/habbgo/game/model/player"
+	"github.com/jtieri/HabbGo/habbgo/server/protocol/composers"
 	"github.com/jtieri/HabbGo/habbgo/server/protocol/packets"
 	"github.com/jtieri/HabbGo/habbgo/utils/encoding"
 	"log"
@@ -24,12 +26,12 @@ type buffer struct {
 
 // Listen starts listening for incoming data from a Session and handles it appropriately.
 func (session *Session) Listen() {
-	// TODO create player and add to list of online players
+	p := &player.Player{Session: session, PlayerDetails: nil} // TODO create p and add to list of online players
 	reader := bufio.NewReader(session.connection)
 
-	// TODO Send HELLO packet to initialize connection
+	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
 
-	// Main loop for listening for incoming packets from a players session
+	// Listen for incoming packets from a players session
 	for {
 		// Attempt to read three bytes; client->server packets in FUSEv0.2.0 begin with 3 byte B64 encoded length.
 		encodedLen := make([]byte, 3)
@@ -60,10 +62,14 @@ func (session *Session) Listen() {
 			rawHeader[i], _ = payload.ReadByte()
 		}
 
-		// Create a struct for the packet, and pass it on to be handled.
-		packet := packets.NewIncoming(rawHeader, payload)
-		log.Printf("Received packet [{%v} - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.Payload.String())
-		// TODO handle packets coming in from player's Session
+		packet := packets.NewIncoming(rawHeader, payload) // Create a struct for the packet
+
+		if session.server.config.Log.Incoming {
+			log.Printf("Received packet [%v - %v] with contents: %v ",
+				packet.Header, packet.HeaderId, packet.Payload.String())
+		}
+
+		go Handle(p, packet) // Handle packets coming in from p's Session
 	}
 }
 
@@ -80,6 +86,10 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 	err = session.buffer.buff.Flush()
 	if err != nil {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+	}
+
+	if session.server.config.Log.Outgoing {
+		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
 	}
 }
 
@@ -101,6 +111,10 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	err := session.buffer.buff.Flush()
 	if err != nil {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+	}
+
+	if session.server.config.Log.Outgoing {
+		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
 	}
 }
 
