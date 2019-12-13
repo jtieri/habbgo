@@ -2,7 +2,7 @@ package packets
 
 import (
 	"bytes"
-	"github.com/jtieri/HabbGo/habbgo/utils/encoding"
+	"github.com/jtieri/HabbGo/habbgo/protocol/encoding"
 )
 
 // OutgoingPacket represents a server->client packet.

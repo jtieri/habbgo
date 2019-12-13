@@ -2,7 +2,7 @@ package packets
 
 import (
 	"bytes"
-	"github.com/jtieri/HabbGo/habbgo/utils/encoding"
+	"github.com/jtieri/HabbGo/habbgo/protocol/encoding"
 )
 
 // IncomingPacket represents a client->server packet.
