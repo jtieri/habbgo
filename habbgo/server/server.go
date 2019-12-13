@@ -1,8 +1,8 @@
 package server
 
 import (
-	"bufio"
-	"github.com/jtieri/HabbGo/habbgo/utils"
+	"database/sql"
+	"github.com/jtieri/HabbGo/habbgo/config"
 	"log"
 	"net"
 	"os"
@@ -10,27 +10,28 @@ import (
 	"sync"
 )
 
-type server struct {
+type Server struct {
 	host           string
 	port           int16
 	maxConns       int
-	config *utils.Config
+	Config         *config.Config
+	Database       *sql.DB
 	activeSessions []*Session
 }
 
 // New returns a pointer to a newly allocated server struct.
-func New(config *utils.Config) *server {
-	server := &server{
-		port: config.Server.Port,
-		host: config.Server.Host,
+func New(config *config.Config, db *sql.DB) *Server {
+	return &Server{
+		port:     config.Server.Port,
+		host:     config.Server.Host,
 		maxConns: config.Server.MaxConns,
-		config: config,
+		Config:   config,
+		Database: db,
 	}
-	return server
 }
 
 // Start will setup the game server to listen for incoming connections and handle them appropriately.
-func (server *server) Start() {
+func (server *Server) Start() {
 	listener, err := net.Listen("tcp", server.host+":"+strconv.Itoa(int(server.port)))
 	if err != nil {
 		log.Fatalf("There was an issue starting the game server on port %v.", server.port) // TODO properly handle errors
@@ -50,12 +51,7 @@ func (server *server) Start() {
 		// Check that there aren't multiple sessions for a given IP address
 		// TODO kick a session to make room for the new one
 		if server.sessionsFromSameAddr(conn) < server.maxConns {
-			session := &Session{
-				connection: conn,
-				buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
-				active:     true,
-				server:     server,
-			}
+			session := NewSession(conn, server)
 
 			log.Printf("New session created for address: %v", conn.LocalAddr().String())
 			server.activeSessions = append(server.activeSessions, session)
@@ -67,10 +63,10 @@ func (server *server) Start() {
 	}
 }
 
-func (server *server) RemoveSession(session *Session) {
+func (server *Server) RemoveSession(session *Session) {
 	mux := sync.Mutex{}
 	for i, activeSession := range server.activeSessions {
-		if activeSession.connection.LocalAddr().String() == session.connection.LocalAddr().String() {
+		if activeSession.Connection.LocalAddr().String() == session.Connection.LocalAddr().String() {
 			mux.Lock()
 			server.activeSessions[i] = server.activeSessions[len(server.activeSessions)-1]
 			server.activeSessions[len(server.activeSessions)-1] = nil
@@ -84,7 +80,7 @@ func (server *server) RemoveSession(session *Session) {
 }
 
 // Stop terminates all active sessions and shuts down the game server.
-func (server *server) Stop() {
+func (server *Server) Stop() {
 	for _, session := range server.activeSessions {
 		session.Close()
 	}
@@ -93,11 +89,11 @@ func (server *server) Stop() {
 	os.Exit(0)
 }
 
-func (server *server) sessionsFromSameAddr(conn net.Conn) int {
+func (server *Server) sessionsFromSameAddr(conn net.Conn) int {
 	count := 0
 
 	for _, session := range server.activeSessions {
-		if conn.LocalAddr().String() == session.connection.LocalAddr().String() {
+		if conn.LocalAddr().String() == session.Connection.LocalAddr().String() {
 			count++
 		}
 	}

@@ -3,20 +3,23 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"database/sql"
 	"github.com/jtieri/HabbGo/habbgo/game/model/player"
-	"github.com/jtieri/HabbGo/habbgo/server/protocol/composers"
-	"github.com/jtieri/HabbGo/habbgo/server/protocol/packets"
-	"github.com/jtieri/HabbGo/habbgo/utils/encoding"
+	"github.com/jtieri/HabbGo/habbgo/game/service"
+	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
+	"github.com/jtieri/HabbGo/habbgo/protocol/encoding"
+	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 	"log"
 	"net"
 	"sync"
 )
 
 type Session struct {
-	connection net.Conn
+	Connection net.Conn
+	database   *sql.DB
 	buffer     *buffer
 	active     bool
-	server     *server
+	server     *Server
 }
 
 type buffer struct {
@@ -24,16 +27,28 @@ type buffer struct {
 	buff *bufio.Writer
 }
 
+func NewSession(conn net.Conn, server *Server) *Session {
+	s := &Session{
+		Connection: conn,
+		database:   server.Database,
+		buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
+		active:     true,
+		server:     server,
+	}
+	return s
+}
+
 // Listen starts listening for incoming data from a Session and handles it appropriately.
 func (session *Session) Listen() {
-	p := &player.Player{Session: session, PlayerDetails: nil} // TODO create p and add to list of online players
-	reader := bufio.NewReader(session.connection)
+	p := player.New(session, service.New())
+	p.Service.Prepare(p)
+	reader := bufio.NewReader(session.Connection)
 
 	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
 
 	// Listen for incoming packets from a players session
 	for {
-		// Attempt to read three bytes; client->server packets in FUSEv0.2.0 begin with 3 byte B64 encoded length.
+		// Attempt to read three bytes; client->server packets in FUSEv0.2.0 begin with 3 byte Base64 encoded length.
 		encodedLen := make([]byte, 3)
 		for i := 0; i < 3; i++ {
 			b, err := reader.ReadByte()
@@ -62,9 +77,9 @@ func (session *Session) Listen() {
 			rawHeader[i], _ = payload.ReadByte()
 		}
 
-		packet := packets.NewIncoming(rawHeader, payload) // Create a struct for the packet
+		packet := packets.NewIncoming(rawHeader, payload)
 
-		if session.server.config.Log.Incoming {
+		if session.server.Config.Log.Incoming {
 			log.Printf("Received packet [%v - %v] with contents: %v ",
 				packet.Header, packet.HeaderId, packet.Payload.String())
 		}
@@ -80,15 +95,15 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
 	}
 
 	err = session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
 	}
 
-	if session.server.config.Log.Outgoing {
+	if session.server.Config.Log.Outgoing {
 		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
 	}
 }
@@ -100,7 +115,7 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
 	}
 }
 
@@ -110,20 +125,24 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 
 	err := session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
 	}
 
-	if session.server.config.Log.Outgoing {
+	if session.server.Config.Log.Outgoing {
 		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
 	}
 }
 
+func (session *Session) Database() *sql.DB {
+	return session.database
+}
+
 // Close disconnects a Session from the server.
 func (session *Session) Close() {
-	log.Printf("Closing session for address: %v ", session.connection.LocalAddr())
+	log.Printf("Closing session for address: %v ", session.Connection.LocalAddr())
 	session.server.RemoveSession(session)
 	session.server = nil
 	session.buffer = nil
-	_ = session.connection.Close()
+	_ = session.Connection.Close()
 	session.active = false
 }
