@@ -5,3 +5,9 @@ server:
 log:
   outgoing: true
   incoming: true
+database:
+  user: "root"
+  password: "matic420SQL"
+  host: "127.0.0.1"
+  port: 3306
+  name: "habbgo"
