@@ -22,14 +22,16 @@ func EncodeB64(i int, length int) []byte {
 // DecodeB64 take a slice of bytes, decodes it from FUSE-Base64 & returns the decoded bytes as an integer.
 func DecodeB64(bytes []byte) int {
 	decodedVal := 0
-	for i, j := len(bytes) - 1, 0; i >= 0; i-- {
-		x := int(bytes[i] - 0x40)
-		if j > 0 {
-			x *= int(math.Pow(64.0, float64(j)))
-		}
+	counter := 0
 
+	for i := len(bytes) - 1; i >= 0; i-- {
+		x := int(bytes[i] - 0x40)
+		if counter > 0 {
+			x *= int(math.Pow(64.0, float64(counter)))
+		}
 		decodedVal += x
-		j--
+		counter++
 	}
+
 	return decodedVal
 }
