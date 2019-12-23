@@ -11,9 +11,6 @@ import (
 )
 
 type Server struct {
-	host           string
-	port           int16
-	maxConns       int
 	Config         *config.Config
 	Database       *sql.DB
 	activeSessions []*Session
@@ -22,19 +19,16 @@ type Server struct {
 // New returns a pointer to a newly allocated server struct.
 func New(config *config.Config, db *sql.DB) *Server {
 	return &Server{
-		port:     config.Server.Port,
-		host:     config.Server.Host,
-		maxConns: config.Server.MaxConns,
 		Config:   config,
 		Database: db,
 	}
 }
 
-// Start will setup the game server to listen for incoming connections and handle them appropriately.
+// Start will setup the game server, start listening for incoming connections, and handle connections appropriately.
 func (server *Server) Start() {
-	listener, err := net.Listen("tcp", server.host+":"+strconv.Itoa(int(server.port)))
+	listener, err := net.Listen("tcp", server.Config.Server.Host+":"+strconv.Itoa(server.Config.Server.Port))
 	if err != nil {
-		log.Fatalf("There was an issue starting the game server on port %v.", server.port) // TODO properly handle errors
+		log.Fatalf("There was an issue starting the game server on port %v.", server.Config.Server.Port) // TODO properly handle errors
 	}
 	log.Printf("Successfully started the game server at %v", listener.Addr().String())
 	defer listener.Close()
@@ -50,7 +44,7 @@ func (server *Server) Start() {
 
 		// Check that there aren't multiple sessions for a given IP address
 		// TODO kick a session to make room for the new one
-		if server.sessionsFromSameAddr(conn) < server.maxConns {
+		if server.sessionsFromSameAddr(conn) < server.Config.Server.MaxConns {
 			session := NewSession(conn, server)
 
 			log.Printf("New session created for address: %v", conn.LocalAddr().String())
@@ -66,7 +60,7 @@ func (server *Server) Start() {
 func (server *Server) RemoveSession(session *Session) {
 	mux := sync.Mutex{}
 	for i, activeSession := range server.activeSessions {
-		if activeSession.Connection.LocalAddr().String() == session.Connection.LocalAddr().String() {
+		if activeSession.connection.LocalAddr().String() == session.connection.LocalAddr().String() {
 			mux.Lock()
 			server.activeSessions[i] = server.activeSessions[len(server.activeSessions)-1]
 			server.activeSessions[len(server.activeSessions)-1] = nil
@@ -89,11 +83,11 @@ func (server *Server) Stop() {
 	os.Exit(0)
 }
 
+// sessionsFromSameAddr returns the number of connections to the server coming from one IP.
 func (server *Server) sessionsFromSameAddr(conn net.Conn) int {
 	count := 0
-
 	for _, session := range server.activeSessions {
-		if conn.LocalAddr().String() == session.Connection.LocalAddr().String() {
+		if conn.LocalAddr().String() == session.connection.LocalAddr().String() {
 			count++
 		}
 	}

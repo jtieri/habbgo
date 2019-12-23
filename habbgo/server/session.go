@@ -14,7 +14,7 @@ import (
 )
 
 type Session struct {
-	Connection net.Conn
+	connection net.Conn
 	database   *sql.DB
 	buffer     *buffer
 	active     bool
@@ -26,21 +26,21 @@ type buffer struct {
 	buff *bufio.Writer
 }
 
+// NewSession returns a pointer to a newly allocated Session struct, representing a players connection to the server.
 func NewSession(conn net.Conn, server *Server) *Session {
-	s := &Session{
-		Connection: conn,
+	return &Session{
+		connection: conn,
 		database:   server.Database,
 		buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
 		active:     true,
 		server:     server,
 	}
-	return s
 }
 
 // Listen starts listening for incoming data from a Session and handles it appropriately.
 func (session *Session) Listen() {
 	p := model.New(session)
-	reader := bufio.NewReader(session.Connection)
+	reader := bufio.NewReader(session.connection)
 
 	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
 
@@ -86,6 +86,7 @@ func (session *Session) Listen() {
 	}
 }
 
+// Send finalizes an outgoing packet with 0x01 and then attempts to write and flush the packet to a Session's buffer.
 func (session *Session) Send(packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
@@ -93,12 +94,12 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
 	}
 
 	err = session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
 	}
 
 	if session.server.Config.Log.Outgoing {
@@ -106,6 +107,7 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 	}
 }
 
+// Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
 func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
@@ -113,17 +115,18 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
 	}
 }
 
+// Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Sessions's buffer.
 func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
 	err := session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
 	}
 
 	if session.server.Config.Log.Outgoing {
@@ -131,16 +134,17 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	}
 }
 
+// Database returns a pointer to a Session's DB access struct.
 func (session *Session) Database() *sql.DB {
 	return session.database
 }
 
 // Close disconnects a Session from the server.
 func (session *Session) Close() {
-	log.Printf("Closing session for address: %v ", session.Connection.LocalAddr())
+	log.Printf("Closing session for address: %v ", session.connection.LocalAddr())
 	session.server.RemoveSession(session)
 	session.server = nil
 	session.buffer = nil
-	_ = session.Connection.Close()
+	_ = session.connection.Close()
 	session.active = false
 }

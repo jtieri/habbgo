@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Server struct {
 		Host     string `yaml:"host"`
-		Port     int16  `yaml:"port"`
+		Port     int    `yaml:"port"`
 		MaxConns int    `yaml:"maxconns"`
 	}
 	Log struct {

@@ -12,6 +12,7 @@ type IncomingPacket struct {
 	Payload  *bytes.Buffer
 }
 
+// NewIncoming returns a pointer to a newly allocated IncomingPacket struct with its appropriate header information.
 func NewIncoming(rawHeader []byte, payload *bytes.Buffer) *IncomingPacket {
 	packet := &IncomingPacket{Header: string(rawHeader), HeaderId: encoding.DecodeB64(rawHeader), Payload: payload}
 	return packet

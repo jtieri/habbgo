@@ -1,6 +1,6 @@
 /*
 vl64 contains an implementation of the FUSE mixed radix numeric encoding used by Sulake in HH.
-This implementation is a Golang port of the examples from Puomi's wiki for VL64.
+This implementation is a Golang port of the examples found on Puomi's wiki page for VL64.
 */
 package encoding
 

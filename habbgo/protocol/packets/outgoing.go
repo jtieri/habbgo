@@ -45,7 +45,7 @@ func (packet *OutgoingPacket) WriteValue(key []byte, value []byte) {
 	packet.Payload.Write(key)
 	packet.Payload.Write([]byte("="))
 	packet.Payload.Write(value)
-	packet.Payload.WriteByte(13)
+	packet.Payload.WriteByte(13) // FUSEv0.2.0 key-value parameter ending marker
 }
 
 // WriteKeyValue writes a key-value pair, separated by ':', to the packets buffer.
