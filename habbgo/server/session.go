@@ -4,8 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"database/sql"
-	"github.com/jtieri/HabbGo/habbgo/game/model/player"
-	"github.com/jtieri/HabbGo/habbgo/game/service"
+	"github.com/jtieri/HabbGo/habbgo/game/model"
 	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
 	"github.com/jtieri/HabbGo/habbgo/protocol/encoding"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
@@ -40,8 +39,7 @@ func NewSession(conn net.Conn, server *Server) *Session {
 
 // Listen starts listening for incoming data from a Session and handles it appropriately.
 func (session *Session) Listen() {
-	p := player.New(session, service.New())
-	p.Service.Prepare(p)
+	p := model.New(session)
 	reader := bufio.NewReader(session.Connection)
 
 	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
