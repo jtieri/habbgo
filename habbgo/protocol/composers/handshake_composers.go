@@ -6,8 +6,8 @@ import (
 	"strconv"
 )
 
-// Used in ComposeSessionParams
-const (
+
+const ( // Used in ComposeSessionParams
 	registerCoppa              = 0 // toggle conf_coppa or conf_strong_coppa_req by setting value > 0 or > 1
 	voucherEnabled             = 1 // Enables in-game vouchers when value is set > 0
 	registerRequireParentEmail = 2 // Requires parent email when registering if value is set > 0
@@ -26,7 +26,7 @@ func ComposeHello() *packets.OutgoingPacket {
 
 func ComposeCryptoParams() *packets.OutgoingPacket {
 	packet := packets.NewOutgoing(277) // Base64 Header DU
-	packet.WriteInt(0)                 // Toggles server->client encryption; 0=off | non-zero=on
+	packet.WriteInt(0)                       // Toggles server->client encryption; 0=off | non-zero=on
 	return packet
 }
 

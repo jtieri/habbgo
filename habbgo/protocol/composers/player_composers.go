@@ -1,22 +1,22 @@
 package composers
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/game/model/player"
+	"github.com/jtieri/HabbGo/habbgo/game/model"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 	"strconv"
 )
 
-func ComposeUserObj(player *player.Player) *packets.OutgoingPacket {
+func ComposeUserObj(player *model.Player) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(5) // Base64 Header @E
 
-	p.WriteString(strconv.Itoa(player.Details.Id)) // writeString userId
-	p.WriteString(player.Details.Username)             // writeString name
-	p.WriteString(player.Details.Figure)               // writeString figure
-	p.WriteString(string(player.Details.Sex))          // writeString sex
-	p.WriteString(player.Details.Motto)                // writeString motto
-	p.WriteInt(player.Details.Tickets)                 // writeInt ph_tickets
-	p.WriteString(player.Details.PoolFigure)           // writeString ph_figure
-	p.WriteInt(player.Details.Film)                    // writeInt photo_film
+	p.WriteString(strconv.Itoa(player.Details.Id))
+	p.WriteString(player.Details.Username)
+	p.WriteString(player.Details.Figure)
+	p.WriteString(player.Details.Sex)
+	p.WriteString(player.Details.Motto)
+	p.WriteInt(player.Details.Tickets)
+	p.WriteString(player.Details.PoolFigure)
+	p.WriteInt(player.Details.Film)
 	//p.WriteInt(directMail)
 
 	return p
@@ -28,14 +28,33 @@ func ComposeCreditBalance(credits int) *packets.OutgoingPacket {
 	return p
 }
 
-func ComposeAvailableBadges() *packets.OutgoingPacket {
+func ComposeAvailableBadges(player *model.Player) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(229) // Base64 Header
 
-	// writeInt num of badges
+	p.WriteInt(len(player.Details.Badges))
 
-	// loop and writeString each badge id
+	var bSlot int
+	for i, b := range player.Details.Badges {
+		p.WriteString(b)
 
-	// writeInt chosenBadge
-	// writeInt visible
+		if b == player.Details.CurrentBadge {
+			bSlot = i
+		}
+	}
+
+	p.WriteInt(bSlot)
+	p.WriteBool(player.Details.DisplayBadge)
+	return p
+}
+
+func ComposeSoundSetting(ss int) *packets.OutgoingPacket {
+	p := packets.NewOutgoing(308) // Base 64 Header Dt
+	p.WriteInt(ss)
+	return p
+}
+
+func ComposeLatency(l int) *packets.OutgoingPacket {
+	p := packets.NewOutgoing(354) // Base 64 Header Eb
+	p.WriteInt(l)
 	return p
 }
