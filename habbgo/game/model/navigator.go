@@ -1,15 +1,15 @@
 package model
 
 type Navigator struct {
-	categories []*Category
+	Categories []Category
 }
 
 type Category struct {
-	id      int
-	pid     int
-	name    string
-	minRank int
-	public  bool
-	trading bool
-	node    bool
+	Id      int
+	Pid     int
+	Node    bool
+	Name    string
+	Public  bool
+	Trading bool
+	MinRank int
 }

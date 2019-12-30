@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jtieri/HabbGo/habbgo/config"
+	"github.com/jtieri/HabbGo/habbgo/game/service"
 	"github.com/jtieri/HabbGo/habbgo/server"
 	"log"
 	"strconv"
@@ -30,8 +31,13 @@ func main() {
 	defer db.Close()
 	log.Printf("Successfully connected to database %v at %v:%v ", c.Database.Name, c.Database.Host, c.Database.Port)
 
+	log.Printf("Setting up in-game services and models...")
+	navService := service.NewNavService(db)
+	navService.BuildNavigator()
+
 	log.Println("Starting the game server... ")
 	gameServer := server.New(&c, db)
 	gameServer.Start()
+
 	defer gameServer.Stop()
 }
