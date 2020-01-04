@@ -2,10 +2,9 @@ package composers
 
 import (
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
-	"github.com/jtieri/HabbGo/habbgo/utils"
+	"github.com/jtieri/HabbGo/habbgo/shared"
 	"strconv"
 )
-
 
 const ( // Used in ComposeSessionParams
 	registerCoppa              = 0 // toggle conf_coppa or conf_strong_coppa_req by setting value > 0 or > 1
@@ -26,7 +25,7 @@ func ComposeHello() *packets.OutgoingPacket {
 
 func ComposeCryptoParams() *packets.OutgoingPacket {
 	packet := packets.NewOutgoing(277) // Base64 Header DU
-	packet.WriteInt(0)                       // Toggles server->client encryption; 0=off | non-zero=on
+	packet.WriteInt(0)                 // Toggles server->client encryption; 0=off | non-zero=on
 	return packet
 }
 
@@ -55,7 +54,7 @@ func ComposeSessionParams() *packets.OutgoingPacket {
 	for i, v := range params {
 		packet.WriteInt(i)
 
-		if utils.IsNumber(v) {
+		if shared.IsNumber(v) {
 			num, _ := strconv.Atoi(v)
 			packet.WriteInt(num)
 		} else {

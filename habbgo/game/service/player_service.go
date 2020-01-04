@@ -9,10 +9,10 @@ import (
 func Login(player *model.Player) {
 	// Set player logged in & ping ready for latency test
 	// Possibly add player to a list of online players? Health endpoint with server stats?
-	// Save current time to DB for players last online time
+	// Save current time to Conn for players last online time
 
 	// Check if player is banned & if so send USER_BANNED
-	// Log IP address to DB
+	// Log IP address to Conn
 
 	database.LoadBadges(player)
 	go player.Session.Send(composers.ComposeLoginOk())

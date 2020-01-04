@@ -134,7 +134,7 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	}
 }
 
-// Database returns a pointer to a Session's DB access struct.
+// Database returns a pointer to a Session's Conn access struct.
 func (session *Session) Database() *sql.DB {
 	return session.database
 }

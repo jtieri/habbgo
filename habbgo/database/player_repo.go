@@ -45,9 +45,9 @@ func LoadBadges(player *model.Player) {
 
 func fillDetails(p *model.Player) {
 	query := "SELECT P.id, P.username, P.sex, P.figure, P.pool_figure, P.film, P.credits, P.tickets, P.motto, " +
-		                  "P.console_motto, P.current_badge, P.display_badge, P.last_online, P.sound_enabled "+
-		     "FROM Players P " +
-		     "WHERE P.username = ?"
+		"P.console_motto, P.current_badge, P.display_badge, P.last_online, P.sound_enabled " +
+		"FROM Players P " +
+		"WHERE P.username = ?"
 
 	err := p.Session.Database().QueryRow(query, p.Details.Username).Scan(&p.Details.Id, &p.Details.Username,
 		&p.Details.Sex, &p.Details.Figure, &p.Details.PoolFigure, &p.Details.Film, &p.Details.Credits,
