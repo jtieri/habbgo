@@ -7,7 +7,7 @@ log:
   incoming: true
 database:
   user: "root"
-  password: "matic420SQL"
+  password: "password"
   host: "127.0.0.1"
   port: 3306
   name: "habbgo"
