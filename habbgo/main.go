@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jtieri/HabbGo/habbgo/config"
 	"github.com/jtieri/HabbGo/habbgo/game/service"
 	"github.com/jtieri/HabbGo/habbgo/server"
 	"log"
-	"strconv"
 )
 
 func main() {
@@ -17,9 +17,9 @@ func main() {
 	c := config.LoadConfig()
 
 	log.Println("Attempting to make connection with the database... ")
-	db, err := sql.Open("mysql", c.Database.User+":"+c.Database.Password+"@tcp"+
-		"("+c.Database.Host+":"+strconv.Itoa(int(c.Database.Port))+")"+"/"+c.Database.Name)
+	host := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", c.Database.User, c.Database.Password, c.Database.Host, c.Database.Port, c.Database.Name)
 
+	db, err := sql.Open("mysql", host)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,8 +32,10 @@ func main() {
 	log.Printf("Successfully connected to database %v at %v:%v ", c.Database.Name, c.Database.Host, c.Database.Port)
 
 	log.Printf("Setting up in-game services and models...")
-	navService := service.NewNavService(db)
-	navService.BuildNavigator()
+	service.NavigatorService().SetDBCon(db)
+	service.NavigatorService().BuildNavigator()
+
+	service.RoomService().SetDBConn(db)
 
 	log.Println("Starting the game server... ")
 	gameServer := server.New(&c, db)
