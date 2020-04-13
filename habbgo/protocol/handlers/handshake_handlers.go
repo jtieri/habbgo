@@ -37,6 +37,7 @@ func HandleTryLogin(player *model.Player, packet *packets.IncomingPacket) {
 
 	if database.Login(player, username, password) {
 		service.Login(player)
+		player.Session.Send(composers.ComposeLoginOk())
 	} else {
 		// TODO send LOCALISED ERROR
 	}

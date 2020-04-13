@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/jtieri/HabbGo/habbgo/database"
 	"github.com/jtieri/HabbGo/habbgo/game/model"
-	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
 )
 
 func Login(player *model.Player) {
@@ -15,7 +14,6 @@ func Login(player *model.Player) {
 	// Log IP address to Conn
 
 	database.LoadBadges(player)
-	go player.Session.Send(composers.ComposeLoginOk())
 
 	// If Config has alerts enabled, send player ALERT
 

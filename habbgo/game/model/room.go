@@ -3,7 +3,7 @@ package model
 type Room struct {
 	Details *Data
 	Model   *Model
-	Map     *Map
+	//Map     *Map
 }
 
 type Data struct {
@@ -25,8 +25,6 @@ type Data struct {
 	CurrentVisitors int
 	MaxVisitors int
 	Rating int
-	CreatedAt string
-	UpdatedAt string
 	ChildRooms []*Room
 }
 

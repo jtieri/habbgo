@@ -63,3 +63,27 @@ func (ns *navService) CategoriesByParentId(pid int) []*model.Category {
 
 	return categories
 }
+
+func CurrentVisitors(cat *model.Category) int {
+	visitors := 0
+
+	for _, room := range RoomService().Rooms() {
+		if room.Details.CatId == cat.Id {
+			visitors += room.Details.CurrentVisitors
+		}
+	}
+
+	return visitors
+}
+
+func MaxVisitors(cat *model.Category) int {
+	visitors := 0
+
+	for _, room := range RoomService().Rooms() {
+		if room.Details.CatId == cat.Id {
+			visitors += room.Details.MaxVisitors
+		}
+	}
+
+	return visitors
+}
