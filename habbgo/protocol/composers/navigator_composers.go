@@ -1,17 +1,18 @@
 package composers
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/game/model"
-	"github.com/jtieri/HabbGo/habbgo/game/service"
+	"github.com/jtieri/HabbGo/habbgo/game/navigator"
+	"github.com/jtieri/HabbGo/habbgo/game/player"
+	"github.com/jtieri/HabbGo/habbgo/game/room"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 	"strconv"
 	"strings"
 )
 
-func ComposeNavNodeInfo(player *model.Player, cat *model.Category, nodeMask bool, subcats []*model.Category, rooms []*model.Room, currentVisitors int, maxVisitors int) *packets.OutgoingPacket {
+func ComposeNavNodeInfo(player *player.Player, cat *navigator.Category, nodeMask bool, subcats []*navigator.Category, rooms []*room.Room, currentVisitors int, maxVisitors int) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(220) // Base64 Header C\
 
-	p.WriteBool(nodeMask)   // hideCategory
+	p.WriteBool(nodeMask) // hideCategory
 	p.WriteInt(cat.Id)
 
 	if cat.Public {
@@ -40,18 +41,18 @@ func ComposeNavNodeInfo(player *model.Player, cat *model.Category, nodeMask bool
 				door, _ = strconv.Atoi(data[1])
 			}
 
-			p.WriteInt(room.Details.Id + service.PublicRoomOffset)// writeInt roomId
-			p.WriteInt(1) // writeInt 1
-			p.WriteString(room.Details.Name)// writeString roomName
+			//p.WriteInt(room.Details.Id + room.PublicRoomOffset) // writeInt roomId
+			p.WriteInt(1)                            // writeInt 1
+			p.WriteString(room.Details.Name)         // writeString roomName
 			p.WriteInt(room.Details.CurrentVisitors) // writeInt currentVisitors
-			p.WriteInt(room.Details.MaxVisitors) // writeInt maxVisitors
-			p.WriteInt(room.Details.CatId) // writeInt catId
-			p.WriteString(desc)// writeString roomDesc
-			p.WriteInt(room.Details.Id) // writeInt roomId
-			p.WriteInt(door) // writeInt door
-			p.WriteString(room.Details.CCTs)// writeString roomCCTs
-			p.WriteInt(0) // writeInt 0
-			p.WriteInt(1) // writeInt 1
+			p.WriteInt(room.Details.MaxVisitors)     // writeInt maxVisitors
+			p.WriteInt(room.Details.CatId)           // writeInt catId
+			p.WriteString(desc)                      // writeString roomDesc
+			p.WriteInt(room.Details.Id)              // writeInt roomId
+			p.WriteInt(door)                         // writeInt door
+			p.WriteString(room.Details.CCTs)         // writeString roomCCTs
+			p.WriteInt(0)                            // writeInt 0
+			p.WriteInt(1)                            // writeInt 1
 		} else {
 			p.WriteInt(room.Details.Id)
 			p.WriteString(room.Details.Name)
@@ -63,7 +64,7 @@ func ComposeNavNodeInfo(player *model.Player, cat *model.Category, nodeMask bool
 				p.WriteString("-")
 			}
 
-			p.WriteString(service.AccessType(room.Details.AccessType))
+			//p.WriteString(room.AccessType(room.Details.AccessType))
 			p.WriteInt(room.Details.CurrentVisitors)
 			p.WriteInt(room.Details.MaxVisitors)
 			p.WriteString(room.Details.Desc)
@@ -79,8 +80,8 @@ func ComposeNavNodeInfo(player *model.Player, cat *model.Category, nodeMask bool
 		p.WriteInt(subcat.Id)
 		p.WriteInt(0)
 		p.WriteString(subcat.Name)
-		p.WriteInt(service.CurrentVisitors(subcat))// writeInt currentVisitors
-		p.WriteInt(service.MaxVisitors(subcat))// writeInt maxVisitors
+		p.WriteInt(navigator.CurrentVisitors(subcat)) // writeInt currentVisitors
+		p.WriteInt(navigator.MaxVisitors(subcat))     // writeInt maxVisitors
 		p.WriteInt(cat.Id)
 	}
 

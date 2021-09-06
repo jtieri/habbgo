@@ -1,12 +1,12 @@
 package composers
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/game/model"
+	"github.com/jtieri/HabbGo/habbgo/game/player"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 	"strconv"
 )
 
-func ComposeUserObj(player *model.Player) *packets.OutgoingPacket {
+func ComposeUserObj(player *player.Player) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(5) // Base64 Header @E
 
 	p.WriteString(strconv.Itoa(player.Details.Id))
@@ -28,7 +28,7 @@ func ComposeCreditBalance(credits int) *packets.OutgoingPacket {
 	return p
 }
 
-func ComposeAvailableBadges(player *model.Player) *packets.OutgoingPacket {
+func ComposeAvailableBadges(player *player.Player) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(229) // Base64 Header
 
 	p.WriteInt(len(player.Details.Badges))

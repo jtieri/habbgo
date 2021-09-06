@@ -1,4 +1,4 @@
-package model
+package player
 
 import (
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"

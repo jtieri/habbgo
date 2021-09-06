@@ -1,18 +1,5 @@
 package database
 
-import (
-	"gorm.io/gorm"
-)
-
-type NavRepo struct {
-	database gorm.DB
-}
-
-// NewNavRepo returns a new instance of NavRepo for use in the navigator service.
-func NewNavRepo(db gorm.DB) *NavRepo {
-	return &NavRepo{database: db}
-}
-
 // Categories retrieves the navigator categories found in database table room_categories and returns them as a slice of
 // Category structs.
 //func (navRepo *NavRepo) Categories() []model.Category {

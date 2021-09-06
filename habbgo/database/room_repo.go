@@ -1,18 +1,5 @@
 package database
 
-import (
-	"github.com/jtieri/HabbGo/habbgo/game/model"
-	"gorm.io/gorm"
-)
-
-type RoomRepo struct {
-	database gorm.DB
-}
-
-func NewRoomRepo(db gorm.DB) *RoomRepo {
-	return &RoomRepo{database: db}
-}
-
 //func (rr *RoomRepo) RoomsByPlayerId(id int) []*model.Room {
 //	stmt, err := rr.database.Prepare("SELECT r.id, r.cat_id, r.name, r.`desc`, r.ccts, r.wallpaper, r.floor, r.landscape, r.owner_id, r.owner_name, r.show_owner, r.sudo_users, r.access_type, r.password, r.current_visitors, r.max_visitors, r.rating FROM rooms r WHERE r.owner_id = ?")
 //	if err != nil {
@@ -44,7 +31,3 @@ func NewRoomRepo(db gorm.DB) *RoomRepo {
 //
 //	return rooms
 //}
-
-func (rr *RoomRepo) fillData(data *model.Data) {
-
-}

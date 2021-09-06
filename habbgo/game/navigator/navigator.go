@@ -1,4 +1,4 @@
-package model
+package navigator
 
 type Navigator struct {
 	Categories []Category

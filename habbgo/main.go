@@ -13,7 +13,7 @@ func main() {
 	log.Println("Booting up HabbGo... ")
 
 	log.Println("Loading config file... ")
-	c := config.LoadConfig()
+	c := config.LoadConfig("config.yml")
 
 	log.Println("Attempting to make connection with the database... ")
 	db, err := gorm.Open(sqlite.Open(c.DB.Name), &gorm.Config{})

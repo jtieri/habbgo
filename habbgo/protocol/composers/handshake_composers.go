@@ -2,7 +2,6 @@ package composers
 
 import (
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
-	"github.com/jtieri/HabbGo/habbgo/shared"
 	"strconv"
 )
 
@@ -54,7 +53,7 @@ func ComposeSessionParams() *packets.OutgoingPacket {
 	for i, v := range params {
 		packet.WriteInt(i)
 
-		if shared.IsNumber(v) {
+		if isNumber(v) {
 			num, _ := strconv.Atoi(v)
 			packet.WriteInt(num)
 		} else {
@@ -67,4 +66,12 @@ func ComposeSessionParams() *packets.OutgoingPacket {
 func ComposeLoginOk() *packets.OutgoingPacket {
 	packet := packets.NewOutgoing(3) // Base 64 Header @C
 	return packet
+}
+
+func isNumber(s string) bool {
+	if _, err := strconv.Atoi(s); err == nil {
+		return true
+	}
+
+	return false
 }

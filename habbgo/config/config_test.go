@@ -10,9 +10,12 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
-	LoadConfig()
+	home, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
 
-	_, err := os.Stat("config.yaml")
+	cfg := path.Join(home, "config.yaml")
+	LoadConfig(cfg)
+	_, err = os.Stat(cfg)
 	require.NoError(t, err)
 }
 

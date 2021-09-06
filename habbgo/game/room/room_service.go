@@ -1,8 +1,6 @@
-package service
+package room
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/database"
-	"github.com/jtieri/HabbGo/habbgo/game/model"
 	"gorm.io/gorm"
 	"strings"
 	"sync"
@@ -14,15 +12,15 @@ var ronce sync.Once
 const PublicRoomOffset = 1000
 
 type roomService struct {
-	repo  *database.RoomRepo
-	rooms map[int]*model.Room
+	//repo  *database.RoomRepo
+	rooms map[int]*Room
 }
 
 func RoomService() *roomService {
 	ronce.Do(func() {
 		rs = &roomService{
-			repo:  nil,
-			rooms: make(map[int]*model.Room, 50),
+
+			rooms: make(map[int]*Room, 50),
 		}
 	})
 
@@ -30,18 +28,18 @@ func RoomService() *roomService {
 }
 
 func (rs *roomService) SetDBConn(db gorm.DB) {
-	rs.repo = database.NewRoomRepo(db)
+	//rs.repo = database.NewRoomRepo(db)
 }
 
-func (rs *roomService) Rooms() []*model.Room {
-	var rooms []*model.Room
+func (rs *roomService) Rooms() []*Room {
+	var rooms []*Room
 	for _, room := range rs.rooms {
 		rooms = append(rooms, room)
 	}
 	return rooms
 }
 
-func (rs *roomService) RoomById(id int) *model.Room {
+func (rs *roomService) RoomById(id int) *Room {
 	if room, ok := rs.rooms[id]; ok {
 		return room
 	}
@@ -52,12 +50,12 @@ func (rs *roomService) RoomById(id int) *model.Room {
 //	return rs.repo.RoomsByPlayerId(id)
 //}
 
-func (rs *roomService) RoomByModelName(name string) *model.Room {
-	return &model.Room{}
+func (rs *roomService) RoomByModelName(name string) *Room {
+	return &Room{}
 }
 
-func (rs *roomService) ReplaceRooms(queryRooms []*model.Room) []*model.Room {
-	var rooms []*model.Room
+func (rs *roomService) ReplaceRooms(queryRooms []*Room) []*Room {
+	var rooms []*Room
 
 	for _, room := range queryRooms {
 		if _, ok := rs.rooms[room.Details.Id]; ok {
@@ -81,7 +79,7 @@ func AccessType(accessId int) string {
 	}
 }
 
-func (rs *roomService) PublicRoom(room *model.Room) bool {
+func (rs *roomService) PublicRoom(room *Room) bool {
 	if room.Details.Owner_Id == 0 {
 		return true
 	} else {
@@ -89,7 +87,7 @@ func (rs *roomService) PublicRoom(room *model.Room) bool {
 	}
 }
 
-func (rs *roomService) PublicName(room *model.Room) string {
+func (rs *roomService) PublicName(room *Room) string {
 	if rs.PublicRoom(room) {
 		if strings.HasPrefix(room.Details.Name, "Upper Hallways") {
 			return "Upper Hallways"
@@ -127,7 +125,7 @@ func (rs *roomService) MaxVisitors() int {
 	return visitors
 }
 
-func (rs *roomService) LoadChildRooms(room *model.Room) {
+func (rs *roomService) LoadChildRooms(room *Room) {
 	if room.Model.Name == "gate_park" {
 		room.Details.ChildRooms = append(room.Details.ChildRooms)
 	}

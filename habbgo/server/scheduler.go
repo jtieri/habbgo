@@ -1,13 +1,13 @@
 package server
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/game/model"
+	"github.com/jtieri/HabbGo/habbgo/game/player"
 	"github.com/jtieri/HabbGo/habbgo/protocol/handlers"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 	"log"
 )
 
-func Handle(player *model.Player, packet *packets.IncomingPacket) {
+func Handle(player *player.Player, packet *packets.IncomingPacket) {
 	switch packet.HeaderId {
 	// Handshake Packets ----------------------------------------------------------------------------------------------
 	case 206: // INIT_CRYPTO

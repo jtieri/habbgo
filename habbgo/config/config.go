@@ -27,9 +27,9 @@ type DatabaseCfg struct {
 	Name     string `yaml:"name"`
 }
 
-func LoadConfig() *Config {
+func LoadConfig(file string) *Config {
 	c := &Config{}
-	data, err := ioutil.ReadFile("./config.yml")
+	data, err := ioutil.ReadFile(file)
 
 	if err != nil {
 		log.Println("Failed to read config file 'config.yml'")
@@ -41,7 +41,7 @@ func LoadConfig() *Config {
 			log.Fatal("An error occured while writing the default config file...")
 		}
 
-		err = os.WriteFile("config.yaml", bz, 0644)
+		err = os.WriteFile(file, bz, 0644)
 		if err != nil {
 			log.Fatal("An error occured while writing the default config file...")
 		}
