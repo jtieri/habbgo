@@ -77,7 +77,7 @@ func (session *Session) Listen() {
 
 		packet := packets.NewIncoming(rawHeader, payload)
 
-		if session.server.Config.Log.Incoming {
+		if session.server.Config.Server.Debug {
 			log.Printf("Received packet [%v - %v] with contents: %v ",
 				packet.Header, packet.HeaderId, packet.Payload.String())
 		}
@@ -102,7 +102,7 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
 	}
 
-	if session.server.Config.Log.Outgoing {
+	if session.server.Config.Server.Debug {
 		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
 	}
 }
@@ -129,7 +129,7 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
 	}
 
-	if session.server.Config.Log.Outgoing {
+	if session.server.Config.Server.Debug {
 		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
 	}
 }

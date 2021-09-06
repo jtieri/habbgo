@@ -17,7 +17,7 @@ func main() {
 	c := config.LoadConfig()
 
 	log.Println("Attempting to make connection with the database... ")
-	host := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", c.Database.User, c.Database.Password, c.Database.Host, c.Database.Port, c.Database.Name)
+	host := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", c.DB.User, c.DB.Password, c.DB.Host, c.DB.Port, c.DB.Name)
 
 	db, err := sql.Open("mysql", host)
 	if err != nil {
@@ -26,10 +26,10 @@ func main() {
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatalf("Failed to connect to database %v at %v:%v %v", c.Database.Name, c.Database.Host, c.Database.Port, err)
+		log.Fatalf("Failed to connect to database %v at %v:%v %v", c.DB.Name, c.DB.Host, c.DB.Port, err)
 	}
 	defer db.Close()
-	log.Printf("Successfully connected to database %v at %v:%v ", c.Database.Name, c.Database.Host, c.Database.Port)
+	log.Printf("Successfully connected to database %v at %v:%v ", c.DB.Name, c.DB.Host, c.DB.Port)
 
 	log.Printf("Setting up in-game services and models...")
 	service.NavigatorService().SetDBCon(db)
@@ -38,7 +38,7 @@ func main() {
 	service.RoomService().SetDBConn(db)
 
 	log.Println("Starting the game server... ")
-	gameServer := server.New(&c, db)
+	gameServer := server.New(c, db)
 	gameServer.Start()
 
 	defer gameServer.Stop()
