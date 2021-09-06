@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/database"
 	"github.com/jtieri/HabbGo/habbgo/game/model"
 	"github.com/jtieri/HabbGo/habbgo/game/service"
 	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
@@ -32,13 +31,13 @@ func HandleSSO(player *model.Player, packet *packets.IncomingPacket) {
 }
 
 func HandleTryLogin(player *model.Player, packet *packets.IncomingPacket) {
-	username := packet.ReadString()
-	password := packet.ReadString()
+	//username := packet.ReadString()
+	//password := packet.ReadString()
 
-	if database.Login(player, username, password) {
-		service.Login(player)
-		player.Session.Send(composers.ComposeLoginOk())
-	} else {
-		// TODO send LOCALISED ERROR
-	}
+	//if database.Login(player, username, password) {
+	//	service.Login(player)
+	//	player.Session.Send(composers.ComposeLoginOk())
+	//} else {
+	//	// TODO send LOCALISED ERROR
+	//}
 }

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/jtieri/HabbGo/habbgo/database"
 	"github.com/jtieri/HabbGo/habbgo/game/model"
 )
 
@@ -13,7 +12,7 @@ func Login(player *model.Player) {
 	// Check if player is banned & if so send USER_BANNED
 	// Log IP address to Conn
 
-	database.LoadBadges(player)
+	// database.LoadBadges(player)
 
 	// If Config has alerts enabled, send player ALERT
 

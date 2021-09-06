@@ -1,15 +1,16 @@
 package service
 
 import (
-	"database/sql"
 	"github.com/jtieri/HabbGo/habbgo/database"
 	"github.com/jtieri/HabbGo/habbgo/game/model"
+	"gorm.io/gorm"
 	"strings"
 	"sync"
 )
 
 var rs *roomService
 var ronce sync.Once
+
 const PublicRoomOffset = 1000
 
 type roomService struct {
@@ -28,7 +29,7 @@ func RoomService() *roomService {
 	return rs
 }
 
-func (rs *roomService) SetDBConn(db *sql.DB) {
+func (rs *roomService) SetDBConn(db gorm.DB) {
 	rs.repo = database.NewRoomRepo(db)
 }
 
@@ -47,9 +48,9 @@ func (rs *roomService) RoomById(id int) *model.Room {
 	return nil
 }
 
-func (rs *roomService) RoomsByPlayerId(id int) []*model.Room {
-	return rs.repo.RoomsByPlayerId(id)
-}
+//func (rs *roomService) RoomsByPlayerId(id int) []*model.Room {
+//	return rs.repo.RoomsByPlayerId(id)
+//}
 
 func (rs *roomService) RoomByModelName(name string) *model.Room {
 	return &model.Room{}
@@ -89,13 +90,13 @@ func (rs *roomService) PublicRoom(room *model.Room) bool {
 }
 
 func (rs *roomService) PublicName(room *model.Room) string {
-	 if rs.PublicRoom(room) {
-	 	if strings.HasPrefix(room.Details.Name, "Upper Hallways") {
+	if rs.PublicRoom(room) {
+		if strings.HasPrefix(room.Details.Name, "Upper Hallways") {
 			return "Upper Hallways"
 		}
 
 		if strings.HasPrefix(room.Details.Name, "Lower Hallways") {
-			 return "Lower Hallways"
+			return "Lower Hallways"
 		}
 
 		if strings.HasPrefix(room.Details.Name, "Club Massiva") {
@@ -103,15 +104,15 @@ func (rs *roomService) PublicName(room *model.Room) string {
 		}
 
 		if strings.HasPrefix(room.Details.Name, "The Chromide Club") {
-			 return "The Chromide Club"
+			return "The Chromide Club"
 		}
 
 		if room.Details.CCTs == "hh_room_gamehall,hh_games" {
 			return "Cunning Fox Gamehall"
 		}
-	 }
+	}
 
-	 return room.Details.Name
+	return room.Details.Name
 }
 
 func (rs *roomService) CurrentVisitors() int {
@@ -128,6 +129,6 @@ func (rs *roomService) MaxVisitors() int {
 
 func (rs *roomService) LoadChildRooms(room *model.Room) {
 	if room.Model.Name == "gate_park" {
-		room.Details.ChildRooms = append(room.Details.ChildRooms,  )
+		room.Details.ChildRooms = append(room.Details.ChildRooms)
 	}
 }

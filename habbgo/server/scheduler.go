@@ -41,7 +41,7 @@ func Handle(player *model.Player, packet *packets.IncomingPacket) {
 
 	// Navigator Packets ----------------------------------------------------------------------------------------------
 	case 150: // NAVIGATE
-		handlers.HandleNavigate(player, packet)
+		//handlers.HandleNavigate(player, packet)
 	case 151: // GETUSERFLATCATS
 
 	case 21: // GETFLATINFO

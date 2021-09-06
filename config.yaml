@@ -1,0 +1,11 @@
+server:
+  host: 127.0.0.1
+  port: 11235
+  maxconns: 2
+  debug: true
+db:
+  user: ""
+  password: ""
+  host: ""
+  port: 0
+  name: ""

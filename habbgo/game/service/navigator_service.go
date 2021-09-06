@@ -1,9 +1,9 @@
 package service
 
 import (
-	"database/sql"
 	"github.com/jtieri/HabbGo/habbgo/database"
 	"github.com/jtieri/HabbGo/habbgo/game/model"
+	"gorm.io/gorm"
 	"sync"
 )
 
@@ -23,7 +23,7 @@ func NavigatorService() *navService {
 		ns = &navService{
 			repo: nil,
 			nav:  new(model.Navigator),
-			mux: &sync.Mutex{},
+			mux:  &sync.Mutex{},
 		}
 	})
 
@@ -31,14 +31,14 @@ func NavigatorService() *navService {
 }
 
 // SetDBCon is called when a NavService struct is allocated initially so that it has access to the applications db.
-func (ns *navService) SetDBCon(db *sql.DB) {
+func (ns *navService) SetDBCon(db gorm.DB) {
 	ns.repo = database.NewNavRepo(db)
 }
 
 // BuildNavigator retrieves the room categories from the database and builds the in-game Navigator with them.
-func (ns *navService) BuildNavigator() {
-	ns.nav.Categories = ns.repo.Categories()
-}
+//func (ns *navService) BuildNavigator() {
+//	ns.nav.Categories = ns.repo.Categories()
+//}
 
 // CategoryById retrieves a navigator category given the int parameter id and returns it if there is a match.
 func (ns *navService) CategoryById(id int) *model.Category {

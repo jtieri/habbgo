@@ -3,11 +3,11 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"database/sql"
 	"github.com/jtieri/HabbGo/habbgo/game/model"
 	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
 	"github.com/jtieri/HabbGo/habbgo/protocol/encoding"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
+	"gorm.io/gorm"
 	"log"
 	"net"
 	"sync"
@@ -15,7 +15,7 @@ import (
 
 type Session struct {
 	connection net.Conn
-	database   *sql.DB
+	database   *gorm.DB
 	buffer     *buffer
 	active     bool
 	server     *Server
@@ -135,7 +135,7 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 }
 
 // Database returns a pointer to a Session's Conn access struct.
-func (session *Session) Database() *sql.DB {
+func (session *Session) Database() *gorm.DB {
 	return session.database
 }
 

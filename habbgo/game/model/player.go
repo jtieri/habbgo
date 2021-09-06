@@ -1,7 +1,6 @@
 package model
 
 import (
-	"database/sql"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 )
 
@@ -33,7 +32,6 @@ type Session interface {
 	Send(packet *packets.OutgoingPacket)
 	Queue(packet *packets.OutgoingPacket)
 	Flush(packet *packets.OutgoingPacket)
-	Database() *sql.DB
 	Close()
 }
 
