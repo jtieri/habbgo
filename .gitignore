@@ -13,3 +13,4 @@
 
 # GoLand project files etc.
 .idea/*
+build/
