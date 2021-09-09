@@ -5,13 +5,12 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jtieri/HabbGo/habbgo/config"
-	"github.com/jtieri/HabbGo/habbgo/game/navigator"
-	"github.com/jtieri/HabbGo/habbgo/game/room"
 	"github.com/jtieri/HabbGo/habbgo/server"
 	"log"
 )
 
 func main() {
+
 	log.Println("Booting up HabbGo... ")
 
 	log.Println("Loading config file... ")
@@ -33,10 +32,10 @@ func main() {
 	log.Printf("Successfully connected to database %v at %v:%v ", c.DB.Name, c.DB.Host, c.DB.Port)
 
 	log.Printf("Setting up in-game services and models...")
-	navigator.NavigatorService().SetDBCon(db)
-	navigator.NavigatorService().BuildNavigator()
+	//navigator.NavigatorService().SetDBCon(db)
+	//navigator.NavigatorService().BuildNavigator()
 
-	room.RoomService().SetDBConn(db)
+	//room.RoomService().SetDBConn(db)
 
 	log.Println("Starting the game server... ")
 	gameServer := server.New(c, db)
