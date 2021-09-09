@@ -14,6 +14,8 @@ func Handle(player *player.Player, packet *packets.IncomingPacket) {
 		handlers.HandleInitCrypto(player, packet)
 	case 202: // GENERATEKEY
 		handlers.HandleGenerateKey(player, packet)
+	case 2002:
+		handlers.HandleGenerateKey(player, packet)
 	case 207: // SECRETKEY
 
 	case 5: // VERSIONCHECK

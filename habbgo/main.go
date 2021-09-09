@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	log.Println("Booting up HabbGo... ")
 
 	log.Println("Loading config file... ")
