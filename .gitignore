@@ -17,3 +17,6 @@ build/
 
 # Config file
 config.yml
+
+# Habbo Client Files
+habbweb/client/
