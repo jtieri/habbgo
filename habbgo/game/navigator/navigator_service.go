@@ -1,8 +1,8 @@
 package navigator
 
 import (
-	room2 "github.com/jtieri/HabbGo/habbgo/game/room"
-	"gorm.io/gorm"
+	"database/sql"
+	"github.com/jtieri/HabbGo/habbgo/game/room"
 	"sync"
 )
 
@@ -10,9 +10,9 @@ var ns *navService
 var nonce sync.Once
 
 type navService struct {
-	//repo *database.NavRepo
-	nav *Navigator
-	mux *sync.Mutex
+	repo *NavRepo
+	nav  *Navigator
+	mux  *sync.Mutex
 }
 
 // NavigatorService will initialize the single instance of navService if it is the first time it is called and then it
@@ -20,9 +20,9 @@ type navService struct {
 func NavigatorService() *navService {
 	nonce.Do(func() {
 		ns = &navService{
-
-			nav: new(Navigator),
-			mux: &sync.Mutex{},
+			repo: nil,
+			nav:  new(Navigator),
+			mux:  &sync.Mutex{},
 		}
 	})
 
@@ -30,14 +30,14 @@ func NavigatorService() *navService {
 }
 
 // SetDBCon is called when a NavService struct is allocated initially so that it has access to the applications db.
-func (ns *navService) SetDBCon(db gorm.DB) {
-	//ns.repo = database.NewNavRepo(db)
+func (ns *navService) SetDBCon(db *sql.DB) {
+	ns.repo = NewNavRepo(db)
 }
 
 // BuildNavigator retrieves the room categories from the database and builds the in-game Navigator with them.
-//func (ns *navService) BuildNavigator() {
-//	ns.nav.Categories = ns.repo.Categories()
-//}
+func (ns *navService) BuildNavigator() {
+	ns.nav.Categories = ns.repo.Categories()
+}
 
 // CategoryById retrieves a navigator category given the int parameter id and returns it if there is a match.
 func (ns *navService) CategoryById(id int) *Category {
@@ -66,9 +66,9 @@ func (ns *navService) CategoriesByParentId(pid int) []*Category {
 func CurrentVisitors(cat *Category) int {
 	visitors := 0
 
-	for _, room := range room2.RoomService().Rooms() {
-		if room.Details.CatId == cat.Id {
-			visitors += room.Details.CurrentVisitors
+	for _, r := range room.RoomService().Rooms() {
+		if r.Details.CatId == cat.Id {
+			visitors += r.Details.CurrentVisitors
 		}
 	}
 
@@ -78,9 +78,9 @@ func CurrentVisitors(cat *Category) int {
 func MaxVisitors(cat *Category) int {
 	visitors := 0
 
-	for _, room := range room2.RoomService().Rooms() {
-		if room.Details.CatId == cat.Id {
-			visitors += room.Details.MaxVisitors
+	for _, r := range room.RoomService().Rooms() {
+		if r.Details.CatId == cat.Id {
+			visitors += r.Details.MaxVisitors
 		}
 	}
 

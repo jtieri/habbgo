@@ -1,7 +1,7 @@
 package room
 
 import (
-	"gorm.io/gorm"
+	"database/sql"
 	"strings"
 	"sync"
 )
@@ -12,14 +12,14 @@ var ronce sync.Once
 const PublicRoomOffset = 1000
 
 type roomService struct {
-	//repo  *database.RoomRepo
+	repo  *RoomRepo
 	rooms map[int]*Room
 }
 
 func RoomService() *roomService {
 	ronce.Do(func() {
 		rs = &roomService{
-
+			repo:  nil,
 			rooms: make(map[int]*Room, 50),
 		}
 	})
@@ -27,8 +27,8 @@ func RoomService() *roomService {
 	return rs
 }
 
-func (rs *roomService) SetDBConn(db gorm.DB) {
-	//rs.repo = database.NewRoomRepo(db)
+func (rs *roomService) SetDBConn(db *sql.DB) {
+	rs.repo = NewRoomRepo(db)
 }
 
 func (rs *roomService) Rooms() []*Room {
@@ -46,9 +46,9 @@ func (rs *roomService) RoomById(id int) *Room {
 	return nil
 }
 
-//func (rs *roomService) RoomsByPlayerId(id int) []*model.Room {
-//	return rs.repo.RoomsByPlayerId(id)
-//}
+func (rs *roomService) RoomsByPlayerId(id int) []*Room {
+	return rs.repo.RoomsByPlayerId(id)
+}
 
 func (rs *roomService) RoomByModelName(name string) *Room {
 	return &Room{}

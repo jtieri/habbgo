@@ -1,8 +1,8 @@
 package server
 
 import (
+	"database/sql"
 	"github.com/jtieri/HabbGo/habbgo/config"
-	"gorm.io/gorm"
 	"log"
 	"net"
 	"os"
@@ -12,12 +12,12 @@ import (
 
 type Server struct {
 	Config         *config.Config
-	Database       *gorm.DB
+	Database       *sql.DB
 	activeSessions []*Session
 }
 
 // New returns a pointer to a newly allocated server struct.
-func New(config *config.Config, db *gorm.DB) *Server {
+func New(config *config.Config, db *sql.DB) *Server {
 	return &Server{
 		Config:   config,
 		Database: db,

@@ -18,25 +18,25 @@ func HandleGetSessionParams(player *player.Player, packet *packets.IncomingPacke
 	player.Session.Send(composers.ComposeSessionParams())
 }
 
-func HandleSSO(player *player.Player, packet *packets.IncomingPacket) {
+func HandleSSO(p *player.Player, packet *packets.IncomingPacket) {
 	token := packet.ReadString()
 
-	// TODO if player login with token is success login, otherwise send LOCALISED ERROR & disconnect from server
+	// TODO if p login with token is success login, otherwise send LOCALISED ERROR & disconnect from server
 	if token == "" {
-		//player.Login(player)
+		player.Login(p)
 	} else {
 
 	}
 }
 
-func HandleTryLogin(player *player.Player, packet *packets.IncomingPacket) {
-	//username := packet.ReadString()
-	//password := packet.ReadString()
+func HandleTryLogin(p *player.Player, packet *packets.IncomingPacket) {
+	username := packet.ReadString()
+	password := packet.ReadString()
 
-	//if database.Login(player, username, password) {
-	//	service.Login(player)
-	//	player.Session.Send(composers.ComposeLoginOk())
-	//} else {
-	//	// TODO send LOCALISED ERROR
-	//}
+	if player.LoginDB(p, username, password) {
+		player.Login(p)
+		p.Session.Send(composers.ComposeLoginOk())
+	} else {
+		// TODO send LOCALISED ERROR
+	}
 }

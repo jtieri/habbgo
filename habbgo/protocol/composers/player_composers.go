@@ -1,25 +1,26 @@
 package composers
 
 import (
+	"strconv"
+
 	"github.com/jtieri/HabbGo/habbgo/game/player"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
-	"strconv"
 )
 
-func ComposeUserObj(player *player.Player) *packets.OutgoingPacket {
-	p := packets.NewOutgoing(5) // Base64 Header @E
+func ComposeUserObj(p *player.Player) *packets.OutgoingPacket {
+	packet := packets.NewOutgoing(5) // Base64 Header @E
 
-	p.WriteString(strconv.Itoa(player.Details.Id))
-	p.WriteString(player.Details.Username)
-	p.WriteString(player.Details.Figure)
-	p.WriteString(player.Details.Sex)
-	p.WriteString(player.Details.Motto)
-	p.WriteInt(player.Details.Tickets)
-	p.WriteString(player.Details.PoolFigure)
-	p.WriteInt(player.Details.Film)
-	//p.WriteInt(directMail)
+	packet.WriteString(strconv.Itoa(p.Details.Id))
+	packet.WriteString(p.Details.Username)
+	packet.WriteString(p.Details.Figure)
+	packet.WriteString(p.Details.Sex)
+	packet.WriteString(p.Details.Motto)
+	packet.WriteInt(p.Details.Tickets)
+	packet.WriteString(p.Details.PoolFigure)
+	packet.WriteInt(p.Details.Film)
+	//packet.WriteInt(directMail)
 
-	return p
+	return packet
 }
 
 func ComposeCreditBalance(credits int) *packets.OutgoingPacket {
@@ -28,23 +29,23 @@ func ComposeCreditBalance(credits int) *packets.OutgoingPacket {
 	return p
 }
 
-func ComposeAvailableBadges(player *player.Player) *packets.OutgoingPacket {
-	p := packets.NewOutgoing(229) // Base64 Header
+func ComposeAvailableBadges(p *player.Player) *packets.OutgoingPacket {
+	packet := packets.NewOutgoing(229) // Base64 Header
 
-	p.WriteInt(len(player.Details.Badges))
+	packet.WriteInt(len(p.Details.Badges))
 
 	var bSlot int
-	for i, b := range player.Details.Badges {
-		p.WriteString(b)
+	for i, b := range p.Details.Badges {
+		packet.WriteString(b)
 
-		if b == player.Details.CurrentBadge {
+		if b == p.Details.CurrentBadge {
 			bSlot = i
 		}
 	}
 
-	p.WriteInt(bSlot)
-	p.WriteBool(player.Details.DisplayBadge)
-	return p
+	packet.WriteInt(bSlot)
+	packet.WriteBool(p.Details.DisplayBadge)
+	return packet
 }
 
 func ComposeSoundSetting(ss int) *packets.OutgoingPacket {

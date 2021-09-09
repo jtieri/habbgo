@@ -8,7 +8,7 @@ func Login(player *Player) {
 	// Check if player is banned & if so send USER_BANNED
 	// Log IP address to Conn
 
-	// database.LoadBadges(player)
+	LoadBadges(player)
 
 	// If Config has alerts enabled, send player ALERT
 

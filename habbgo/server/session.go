@@ -3,19 +3,20 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"database/sql"
+	"log"
+	"net"
+	"sync"
+
 	"github.com/jtieri/HabbGo/habbgo/game/player"
 	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
 	"github.com/jtieri/HabbGo/habbgo/protocol/encoding"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
-	"gorm.io/gorm"
-	"log"
-	"net"
-	"sync"
 )
 
 type Session struct {
 	connection net.Conn
-	database   *gorm.DB
+	database   *sql.DB
 	buffer     *buffer
 	active     bool
 	server     *Server
@@ -119,7 +120,7 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	}
 }
 
-// Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Sessions's buffer.
+// Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Sessions's buffer.
 func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -135,7 +136,7 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 }
 
 // Database returns a pointer to a Session's Conn access struct.
-func (session *Session) Database() *gorm.DB {
+func (session *Session) Database() *sql.DB {
 	return session.database
 }
 
