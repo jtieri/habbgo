@@ -1,24 +1,27 @@
 package handlers
 
+/*
+
+ */
 import (
 	"github.com/jtieri/HabbGo/habbgo/game/player"
 	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 )
 
-func HandleInitCrypto(player *player.Player, packet *packets.IncomingPacket) {
+func InitCrypto(player *player.Player, packet *packets.IncomingPacket) {
 	player.Session.Send(composers.ComposeCryptoParams())
 }
 
-func HandleGenerateKey(player *player.Player, packet *packets.IncomingPacket) {
+func GenerateKey(player *player.Player, packet *packets.IncomingPacket) {
 	player.Session.Send(composers.ComposeEndCrypto())
 }
 
-func HandleGetSessionParams(player *player.Player, packet *packets.IncomingPacket) {
+func GetSessionParams(player *player.Player, packet *packets.IncomingPacket) {
 	player.Session.Send(composers.ComposeSessionParams())
 }
 
-func HandleSSO(p *player.Player, packet *packets.IncomingPacket) {
+func SSO(p *player.Player, packet *packets.IncomingPacket) {
 	token := packet.ReadString()
 
 	// TODO if p login with token is success login, otherwise send LOCALISED ERROR & disconnect from server
@@ -29,7 +32,7 @@ func HandleSSO(p *player.Player, packet *packets.IncomingPacket) {
 	}
 }
 
-func HandleTryLogin(p *player.Player, packet *packets.IncomingPacket) {
+func TryLogin(p *player.Player, packet *packets.IncomingPacket) {
 	username := packet.ReadString()
 	password := packet.ReadString()
 

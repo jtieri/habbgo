@@ -8,7 +8,7 @@ import (
 	"github.com/jtieri/HabbGo/habbgo/protocol/packets"
 )
 
-func HandleNavigate(player *player.Player, packet *packets.IncomingPacket) {
+func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 	roomService := room.RoomService()
 
 	nodeMask := packet.ReadInt() == 1

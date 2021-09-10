@@ -34,6 +34,8 @@ type Session interface {
 	Queue(packet *packets.OutgoingPacket)
 	Flush(packet *packets.OutgoingPacket)
 	Database() *sql.DB
+	Address() string
+	GetPacketHandler(headerId int) (func(*Player, *packets.IncomingPacket), bool)
 	Close()
 }
 

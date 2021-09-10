@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"database/sql"
+	logger "github.com/jtieri/HabbGo/habbgo/log"
 	"log"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/jtieri/HabbGo/habbgo/game/player"
@@ -20,6 +22,7 @@ type Session struct {
 	buffer     *buffer
 	active     bool
 	server     *Server
+	router     *Router
 }
 
 type buffer struct {
@@ -35,6 +38,7 @@ func NewSession(conn net.Conn, server *Server) *Session {
 		buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
 		active:     true,
 		server:     server,
+		router:     RegisterHandlers(),
 	}
 }
 
@@ -78,11 +82,6 @@ func (session *Session) Listen() {
 
 		packet := packets.NewIncoming(rawHeader, payload)
 
-		if session.server.Config.Server.Debug {
-			log.Printf("Received packet [%v - %v] with contents: %v ",
-				packet.Header, packet.HeaderId, packet.Payload.String())
-		}
-
 		go Handle(p, packet) // Handle packets coming in from p's Session
 	}
 }
@@ -95,16 +94,16 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
 	err = session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if session.server.Config.Server.Debug {
-		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
+	if Config.Server.Debug {
+		logger.PrintOutgoingPacket(session.Address(), packet)
 	}
 }
 
@@ -116,7 +115,7 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 }
 
@@ -127,11 +126,11 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 
 	err := session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if session.server.Config.Server.Debug {
-		log.Printf("Sent packet [%v - %v] with contents: %v ", packet.Header, packet.HeaderId, packet.String())
+	if Config.Server.Debug {
+		logger.PrintOutgoingPacket(session.Address(), packet)
 	}
 }
 
@@ -140,9 +139,17 @@ func (session *Session) Database() *sql.DB {
 	return session.database
 }
 
+func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
+	return session.router.GetHandler(headerId)
+}
+
+func (session *Session) Address() string {
+	return strings.Split(session.connection.RemoteAddr().String(), ":")[0] // split ip:port at : and return ip part
+}
+
 // Close disconnects a Session from the server.
 func (session *Session) Close() {
-	log.Printf("Closing session for address: %v ", session.connection.LocalAddr())
+	log.Printf("Closing session for address: %v ", session.Address())
 	session.server.RemoveSession(session)
 	session.server = nil
 	session.buffer = nil
