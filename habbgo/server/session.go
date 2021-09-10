@@ -94,15 +94,15 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
 	err = session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if session.server.Config.Server.Debug {
+	if Config.Server.Debug {
 		logger.PrintOutgoingPacket(session.Address(), packet)
 	}
 }
@@ -115,7 +115,7 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 }
 
@@ -126,10 +126,10 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 
 	err := session.buffer.buff.Flush()
 	if err != nil {
-		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.connection.LocalAddr(), err)
+		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if session.server.Config.Server.Debug {
+	if Config.Server.Debug {
 		logger.PrintOutgoingPacket(session.Address(), packet)
 	}
 }
@@ -144,7 +144,7 @@ func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *pa
 }
 
 func (session *Session) Address() string {
-	return strings.Split(session.connection.RemoteAddr().String(), ":")[0]
+	return strings.Split(session.connection.RemoteAddr().String(), ":")[0] // split ip:port at : and return ip part
 }
 
 // Close disconnects a Session from the server.

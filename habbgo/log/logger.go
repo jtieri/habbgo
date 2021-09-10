@@ -10,16 +10,16 @@ import (
 )
 
 func PrintOutgoingPacket(playerAddr string, p *packets.OutgoingPacket) {
-	log.Printf("[OUTGOING] [%v] [%v - %v] contents: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
+	log.Printf("[%v] [OUTGOING] [%v - %v] contents: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
 }
 
 func PrintIncomingPacket(playerAddr string, handler func(*player.Player, *packets.IncomingPacket), p *packets.IncomingPacket) {
 	hName := getHandlerName(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
-	log.Printf("[INCOMING] [%v] [%v - %v|%v] contents: %v ", playerAddr, hName, p.Header, p.HeaderId, p.Payload.String())
+	log.Printf("[%v] [INCOMING] [%v - %v|%v] contents: %v ", playerAddr, hName, p.Header, p.HeaderId, p.Payload.String())
 }
 
 func PrintUnkownPacket(playerAddr string, p *packets.IncomingPacket) {
-	log.Printf("[UNK] [%v] [%v - %v] contents: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
+	log.Printf("[%v] [UNK] [%v - %v] contents: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
 }
 
 func getHandlerName(handler string) string {
