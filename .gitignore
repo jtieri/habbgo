@@ -20,3 +20,6 @@ config.yml
 
 # Habbo Client Files
 habbweb/client/
+
+# Habbo Client Src
+assets/habbo_src/
