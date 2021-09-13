@@ -20,6 +20,11 @@ func NewOutgoing(headerId int) *OutgoingPacket {
 	return packet
 }
 
+// Write will write the passed in object as a string
+func (packet *OutgoingPacket) Write(s string) {
+	packet.Payload.Write([]byte(s))
+}
+
 // WriteString writes a string to the packets buffer.
 func (packet *OutgoingPacket) WriteString(s string) {
 	packet.Payload.Write([]byte(s))

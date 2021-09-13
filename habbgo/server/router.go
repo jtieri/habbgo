@@ -29,11 +29,8 @@ func (r *Router) RegisterHandshakeHandlers() {
 	r.RegisteredPackets[206] = handlers.InitCrypto
 	r.RegisteredPackets[202] = handlers.GenerateKey  // older clients
 	r.RegisteredPackets[2002] = handlers.GenerateKey // newer clients
-	// 207 - SECRETKEY
-	// 5 - VERSIONCHECK in older clients
-	// 1170 - VERSIONCHECK in later clients? v26+?
-	// TODO figure out exact client revisions when these packet headers change
-	// 6 - UNIQUEID
+	r.RegisteredPackets[5] = handlers.VersionCheck   // 1170 - VERSIONCHECK in later clients? v26+? // TODO figure out exact client revisions when these packet headers change
+	r.RegisteredPackets[6] = handlers.UniqueID       // 6 - UNIQUEID
 	r.RegisteredPackets[181] = handlers.GetSessionParams
 	r.RegisteredPackets[204] = handlers.SSO
 	r.RegisteredPackets[4] = handlers.TryLogin
