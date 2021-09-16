@@ -16,7 +16,7 @@ func Handle(p *player.Player, packet *packets.IncomingPacket) {
 		handler(p, packet)
 	} else {
 		if GetConfig().Server.Debug {
-			logger.PrintUnkownPacket(p.Session.Address(), packet)
+			logger.PrintUnknownPacket(p.Session.Address(), packet)
 		}
 	}
 

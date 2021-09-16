@@ -19,6 +19,7 @@ func RegisterHandlers() (r *Router) {
 	r = &Router{RegisteredPackets: make(map[int]func(p *player.Player, packet *packets.IncomingPacket))}
 
 	r.RegisterHandshakeHandlers()
+	r.RegisterRegistrationHandlers()
 	r.RegisterPlayerHandlers()
 	r.RegisterNavigatorHandlers()
 
@@ -34,6 +35,13 @@ func (r *Router) RegisterHandshakeHandlers() {
 	r.RegisteredPackets[181] = handlers.GetSessionParams
 	r.RegisteredPackets[204] = handlers.SSO
 	r.RegisteredPackets[4] = handlers.TryLogin
+	r.RegisteredPackets[207] = handlers.SECRETKEY
+}
+
+func (r *Router) RegisterRegistrationHandlers() {
+	// r.RegisteredPackets[9] = GETAVAILABLESETS
+	r.RegisteredPackets[49] = handlers.GDATE
+	r.RegisteredPackets[42] = handlers.APPROVENAME // 42 - APPROVENAME
 }
 
 func (r *Router) RegisterPlayerHandlers() {
