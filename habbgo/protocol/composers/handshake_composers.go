@@ -30,7 +30,7 @@ func ComposeCryptoParams() *packets.OutgoingPacket {
 
 func ComposeSecretKey() *packets.OutgoingPacket {
 	packet := packets.NewOutgoing(1)
-	packet.WriteString("secretkey")
+	packet.WriteString("dsfsfaefsadfdsffdshdsfgfdfdsafdasefasdfasdfsdgfdsgdsfgsdfgds")
 	return packet
 }
 

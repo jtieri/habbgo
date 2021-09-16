@@ -13,6 +13,7 @@ func InitCrypto(player *player.Player, packet *packets.IncomingPacket) {
 func GenerateKey(player *player.Player, packet *packets.IncomingPacket) {
 	player.Session.Send(composers.ComposeAvailableSets())
 	player.Session.Send(composers.ComposeEndCrypto())
+	//player.Session.Send(composers.ComposeSecretKey())
 }
 
 func GetSessionParams(player *player.Player, packet *packets.IncomingPacket) {
@@ -25,6 +26,10 @@ func VersionCheck(player *player.Player, packet *packets.IncomingPacket) {
 
 func UniqueID(player *player.Player, packet *packets.IncomingPacket) {
 
+}
+
+func SECRETKEY(player *player.Player, packets *packets.IncomingPacket) {
+	player.Session.Send(composers.ComposeEndCrypto())
 }
 
 func SSO(p *player.Player, packet *packets.IncomingPacket) {
