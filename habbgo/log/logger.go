@@ -18,7 +18,7 @@ func PrintIncomingPacket(playerAddr string, handler func(*player.Player, *packet
 	log.Printf("[%v] [INCOMING] [%v - %v|%v]: %v ", playerAddr, hName, p.Header, p.HeaderId, p.Payload.String())
 }
 
-func PrintUnkownPacket(playerAddr string, p *packets.IncomingPacket) {
+func PrintUnknownPacket(playerAddr string, p *packets.IncomingPacket) {
 	log.Printf("[%v] [UNK] [%v - %v]: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
 }
 
