@@ -31,7 +31,7 @@ func (r *Router) RegisterHandshakeHandlers() {
 	r.RegisteredPackets[202] = handlers.GenerateKey  // older clients
 	r.RegisteredPackets[2002] = handlers.GenerateKey // newer clients
 	r.RegisteredPackets[5] = handlers.VersionCheck   // 1170 - VERSIONCHECK in later clients? v26+? // TODO figure out exact client revisions when these packet headers change
-	r.RegisteredPackets[6] = handlers.UniqueID       // 6 - UNIQUEID
+	r.RegisteredPackets[6] = handlers.UniqueID
 	r.RegisteredPackets[181] = handlers.GetSessionParams
 	r.RegisteredPackets[204] = handlers.SSO
 	r.RegisteredPackets[4] = handlers.TryLogin
@@ -39,9 +39,11 @@ func (r *Router) RegisterHandshakeHandlers() {
 }
 
 func (r *Router) RegisterRegistrationHandlers() {
-	// r.RegisteredPackets[9] = GETAVAILABLESETS
+	r.RegisteredPackets[9] = handlers.GETAVAILABLESETS
 	r.RegisteredPackets[49] = handlers.GDATE
-	r.RegisteredPackets[42] = handlers.APPROVENAME // 42 - APPROVENAME
+	r.RegisteredPackets[42] = handlers.APPROVENAME
+	r.RegisteredPackets[203] = handlers.APPROVE_PASSWORD
+	r.RegisteredPackets[197] = handlers.APPROVEEMAIL
 }
 
 func (r *Router) RegisterPlayerHandlers() {
