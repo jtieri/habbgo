@@ -6,7 +6,7 @@ import (
 
 func LoginDB(player *Player, username string, password string) bool {
 	var pw, name string
-	err := player.Session.Database().QueryRow("SELECT P.passwrd, P.username FROM Players P WHERE P.username = ?", username).Scan(&pw, &name)
+	err := player.Session.Database().QueryRow("SELECT P.Password, P.Username FROM Player P WHERE P.username = ?", username).Scan(&pw, &name)
 
 	if err != nil {
 		log.Printf("%v ", err) // TODO log database errors properly
@@ -22,7 +22,7 @@ func LoginDB(player *Player, username string, password string) bool {
 }
 
 func LoadBadges(player *Player) {
-	rows, err := player.Session.Database().Query("SELECT P.badge FROM Players_Badges P WHERE P.pid = ?", player.Details.Id)
+	rows, err := player.Session.Database().Query("SELECT P.Badge FROM PlayerBadges P WHERE P.PlayerID = ?", player.Details.Id)
 	if err != nil {
 		log.Printf("%v ", err) // TODO properly log error
 	}
@@ -42,9 +42,27 @@ func LoadBadges(player *Player) {
 	player.Details.Badges = badges
 }
 
+func PlayerExists(p *Player, username string) bool {
+	rows, err := p.Session.Database().Query("SELECT P.ID FROM Player P WHERE P.Username = ?", username)
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		return true
+	}
+
+	if rows.Err() != nil {
+		log.Printf("%s", err)
+	}
+
+	return false
+}
+
 func fillDetails(p *Player) {
-	query := "SELECT P.id, P.username, P.sex, P.figure, P.pool_figure, P.film, P.credits, P.tickets, P.motto, " +
-		"P.console_motto, P.current_badge, P.display_badge, P.last_online, P.sound_enabled " +
+	query := "SELECT P.ID, P.Username, P.Sex, P.Figure, P.PoolFigure, P.Film, P.Credits, P.Tickets, P.Motto, " +
+		"P.ConsoleMotto, P.DisplayBadge, P.LastOnline, P.SoundEnabled " +
 		"FROM Players P " +
 		"WHERE P.username = ?"
 
