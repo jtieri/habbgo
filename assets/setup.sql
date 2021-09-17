@@ -1,35 +1,35 @@
-CREATE DATABASE habbgo;
+CREATE DATABASE IF NOT EXISTS `habbgo`;
 
-CREATE TABLE Player {
-    ID INT NOT NULL UNIQUE,
-    Username VARCHAR(16) NOT NULL UNIQUE,
-    Sex CHAR(1) NOT NULL,
-    Figure TEXT NOT NULL,
-    PoolFigure TEXT,
-    Film INT DEFAULT 0,
-    Credits INT DEFAULT 0,
-    Tickets INT DEFAULT 0,
-    Motto TEXT DEFAULT 'Project HabbGo.',
-    ConsoleMotto TEXT DEFAULT 'HabbGo Rocks!',
-    DisplayBadge BOOL DEFAULT false,
-    CurrentBadge INT,
-    SoundEnabled BOOL DEFAULT true,
-    CreatedOn DATETIME NOT NULL,
-    LastOnline DATETIME,
+CREATE TABLE IF NOT EXISTS `Player` (
+    `ID` INT,
+    `Username` VARCHAR(16) NOT NULL UNIQUE,
+    `Password` VARCHAR(10) NOT NULL,
+    `SSOToken` TEXT DEFAULT NULL,
+    `Sex` ENUM('M','F') NOT NULL DEFAULT 'F',
+    `Figure` TEXT NOT NULL DEFAULT '1000118001270012900121001',
+    `PoolFigure` TEXT,
+    `Film` INT DEFAULT 0,
+    `Credits` INT DEFAULT 100,
+    `Tickets` INT DEFAULT 0,
+    `Motto` TEXT DEFAULT 'Project HabbGo.',
+    `ConsoleMotto` TEXT DEFAULT 'HabbGo Rocks!',
+    `DisplayBadge` BOOL DEFAULT false,
+    `CurrentBadge` INT,
+    `SoundEnabled` BOOL DEFAULT true,
+    `CreatedOn` DATETIME NOT NULL,
+    `LastOnline` DATETIME,
+    PRIMARY KEY (ID),
     FOREIGN KEY (CurrentBadge) REFERENCES Badge(ID)
-    PRIMARY KEY (ID)
-};
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE Badge {
-    ID INT NOT NULL UNIQUE,
-    Code VARCHAR(6) UNIQUE,
-    PRIMARY KEY (ID)
-};
+CREATE TABLE IF NOT EXISTS `Badge` (
+    `ID` INT PRIMARY KEY AUTO_INCREMENT,
+    `Code` VARCHAR(3) UNIQUE NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE PlayerBadges {
-    PlayerID INT NOT NULL,
-    Badge INT,
-    FOREIGN KEY (PlayerID) REFERENCES Player(ID)
+CREATE TABLE IF NOT EXISTS `PlayerBadges` (
+    `PlayerID` INT,
+    `Badge` INT,
+    FOREIGN KEY (PlayerID) REFERENCES Player(ID),
     FOREIGN KEY (Badge) REFERENCES Badge(ID)
-    PRIMARY KEY (PlayerID)
-};
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
