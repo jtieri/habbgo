@@ -1,6 +1,9 @@
 package text
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 func Filter(s string) string {
 	output := strings.Replace(s, string(rune(1)), "", -1)
@@ -22,6 +25,16 @@ func ContainsAllowedChars(toTest, allowedChars string) bool {
 	}
 
 	return true
+}
+
+func ContainsANumber(text string) bool {
+	for _, l := range text {
+		if _, err := strconv.Atoi(string(l)); err == nil {
+			return true
+		}
+	}
+
+	return false
 }
 
 /*
