@@ -1,9 +1,10 @@
 CREATE DATABASE IF NOT EXISTS `habbgo`;
 
-CREATE TABLE IF NOT EXISTS `Player` (
-    `ID` INT,
+CREATE TABLE IF NOT EXISTS `Players` (
+    `ID` INT PRIMARY KEY AUTO_INCREMENT,
     `Username` VARCHAR(16) NOT NULL UNIQUE,
-    `Password` VARCHAR(10) NOT NULL,
+    `PasswordHash` TEXT NOT NULL,
+    `PasswordSalt` VARBINARY NOT NULL,
     `SSOToken` TEXT DEFAULT NULL,
     `Sex` ENUM('M','F') NOT NULL DEFAULT 'F',
     `Figure` TEXT NOT NULL DEFAULT '1000118001270012900121001',
@@ -13,16 +14,17 @@ CREATE TABLE IF NOT EXISTS `Player` (
     `Tickets` INT DEFAULT 0,
     `Motto` TEXT DEFAULT 'Project HabbGo.',
     `ConsoleMotto` TEXT DEFAULT 'HabbGo Rocks!',
-    `DisplayBadge` BOOL DEFAULT false,
+    `DisplayBadge` BOOL NOT NULL DEFAULT true,
     `CurrentBadge` INT,
-    `SoundEnabled` BOOL DEFAULT true,
+    `Birthday` DATE NOT NULL,
+    `Email` TEXT NOT NULL,
+    `SoundEnabled` BOOL NOT NULL DEFAULT true,
     `CreatedOn` DATETIME NOT NULL,
     `LastOnline` DATETIME,
-    PRIMARY KEY (ID),
-    FOREIGN KEY (CurrentBadge) REFERENCES Badge(ID)
+    FOREIGN KEY (CurrentBadge) REFERENCES Badges (ID)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS `Badge` (
+CREATE TABLE IF NOT EXISTS `Badges` (
     `ID` INT PRIMARY KEY AUTO_INCREMENT,
     `Code` VARCHAR(3) UNIQUE NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -30,6 +32,6 @@ CREATE TABLE IF NOT EXISTS `Badge` (
 CREATE TABLE IF NOT EXISTS `PlayerBadges` (
     `PlayerID` INT,
     `Badge` INT,
-    FOREIGN KEY (PlayerID) REFERENCES Player(ID),
-    FOREIGN KEY (Badge) REFERENCES Badge(ID)
+    FOREIGN KEY (PlayerID) REFERENCES Players (ID) ON DELETE CASCADE,
+    FOREIGN KEY (Badge) REFERENCES Badges (ID)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
