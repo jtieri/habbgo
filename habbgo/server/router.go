@@ -34,7 +34,7 @@ func (r *Router) RegisterHandshakeHandlers() {
 	r.RegisteredPackets[6] = handlers.UniqueID
 	r.RegisteredPackets[181] = handlers.GetSessionParams
 	r.RegisteredPackets[204] = handlers.SSO
-	r.RegisteredPackets[4] = handlers.TryLogin
+	r.RegisteredPackets[4] = handlers.TRY_LOGIN
 	r.RegisteredPackets[207] = handlers.SECRETKEY
 }
 
@@ -44,6 +44,7 @@ func (r *Router) RegisterRegistrationHandlers() {
 	r.RegisteredPackets[42] = handlers.APPROVENAME
 	r.RegisteredPackets[203] = handlers.APPROVE_PASSWORD
 	r.RegisteredPackets[197] = handlers.APPROVEEMAIL
+	r.RegisteredPackets[43] = handlers.REGISTER
 }
 
 func (r *Router) RegisterPlayerHandlers() {

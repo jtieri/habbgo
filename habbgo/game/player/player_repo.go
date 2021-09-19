@@ -1,19 +1,43 @@
 package player
 
 import (
+	"database/sql"
+	"github.com/jtieri/HabbGo/habbgo/crypto"
 	"log"
 )
 
-func LoginDB(player *Player, username string, password string) bool {
-	var pw, name string
-	err := player.Session.Database().QueryRow("SELECT P.Password, P.Username FROM Player P WHERE P.username = ?", username).Scan(&pw, &name)
+func Register(db *sql.DB, username, figure, gender, email, birthday, createdAt, password string, salt []byte) error {
+	stmt, err := db.Prepare(
+		"INSERT INTO Players(Username, Figure, Sex, Email, Birthday, CreatedOn, PasswordHash, PasswordSalt) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 
 	if err != nil {
-		log.Printf("%v ", err) // TODO log database errors properly
+		return err
 	}
 
-	if password == pw {
-		player.Details.Username = name
+	_, err = stmt.Exec(username, figure, gender, email, birthday, createdAt, password, salt)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LoginDB(player *Player, username string, password string) bool {
+	var (
+		psswrdHash, uname string
+		psswrdSalt        []byte
+	)
+
+	err := player.Session.Database().QueryRow(
+		"SELECT P.PasswordHash, P.PasswordSalt, P.Username FROM Players P WHERE P.Username = ?", username).
+		Scan(&psswrdHash, &psswrdSalt, &uname)
+
+	if err != nil {
+		player.LogErr(err)
+	}
+
+	if crypto.HashPassword(password, psswrdSalt) == psswrdHash {
+		player.Details.Username = uname
 		fillDetails(player)
 		return true
 	}
@@ -43,7 +67,7 @@ func LoadBadges(player *Player) {
 }
 
 func PlayerExists(p *Player, username string) bool {
-	rows, err := p.Session.Database().Query("SELECT P.ID FROM Player P WHERE P.Username = ?", username)
+	rows, err := p.Session.Database().Query("SELECT P.ID FROM Players P WHERE P.Username = ?", username)
 	if err != nil {
 		log.Printf("%s", err)
 	}
@@ -58,6 +82,10 @@ func PlayerExists(p *Player, username string) bool {
 	}
 
 	return false
+}
+
+func UpdateLastOnline(datetime string) {
+
 }
 
 func fillDetails(p *Player) {

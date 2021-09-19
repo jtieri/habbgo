@@ -3,7 +3,9 @@ package handlers
 import (
 	"net/mail"
 	"strings"
+	"time"
 
+	"github.com/jtieri/HabbGo/habbgo/crypto"
 	"github.com/jtieri/HabbGo/habbgo/date"
 	"github.com/jtieri/HabbGo/habbgo/game/player"
 	"github.com/jtieri/HabbGo/habbgo/protocol/composers"
@@ -76,12 +78,29 @@ func REGISTER(p *player.Player, packet *packets.IncomingPacket) {
 	packet.ReadBytes(11)
 	password := packet.ReadString()
 
-	// Hash password and check hash worked
-	// Create new entry in DB for new player
+	// hash password before storing in db
+	randSalt := crypto.GenerateRandomSalt(crypto.SALTSIZE)
+	hPsswrd := crypto.HashPassword(password, randSalt)
 
+	// generate date time stamp in UTC with format YYYY-MM-DD T HH-MM-SS
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	createdAt := now.Format("2006-01-02 15:04:05")
+
+	// put birthday in YYYY-MM-DD format before storing in db
+	var bday string
+	for i, s := range strings.Split(birthday, ".") {
+		if i == 0 {
+			bday = s + bday
+		} else {
+			bday = s + "-" + bday
+		}
+	}
+
+	p.Register(username, figure, gender, email, bday, createdAt, hPsswrd, randSalt)
 	/*
 		2021/09/16 22:28:48 [127.0.0.1] [UNK] [@k - 43]: @B@Itreebeard@D@Y1000118001270012900121001@E@AM@F@@@G@Mboob@none.com@H@J27.01.1995@JA@A@@I@@C@Jtreebeard1
-		2021/09/16 22:29:04 [127.0.0.1] [INCOMING] [TryLogin - @D|4]: @Itreebeard@Jtreebeard1
+		2021/09/16 22:29:04 [127.0.0.1] [INCOMING] [TRY_LOGIN - @D|4]: @Itreebeard@Jtreebeard1
 	*/
 }
 

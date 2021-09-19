@@ -103,7 +103,7 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 	}
 
 	if Config.Server.Debug {
-		logger.PrintOutgoingPacket(session.Address(), packet)
+		logger.LogOutgoingPacket(session.Address(), packet)
 	}
 }
 
@@ -130,7 +130,7 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	}
 
 	if Config.Server.Debug {
-		logger.PrintOutgoingPacket(session.Address(), packet)
+		logger.LogOutgoingPacket(session.Address(), packet)
 	}
 }
 
