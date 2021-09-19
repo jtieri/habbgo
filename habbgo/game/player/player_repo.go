@@ -1,13 +1,13 @@
 package player
 
 import (
-	"database/sql"
+	"github.com/jtieri/HabbGo/habbgo/app"
 	"github.com/jtieri/HabbGo/habbgo/crypto"
 	"log"
 )
 
-func Register(db *sql.DB, username, figure, gender, email, birthday, createdAt, password string, salt []byte) error {
-	stmt, err := db.Prepare(
+func Register(username, figure, gender, email, birthday, createdAt, password string, salt []byte) error {
+	stmt, err := app.HabbGo().Database.Prepare(
 		"INSERT INTO Players(Username, Figure, Sex, Email, Birthday, CreatedOn, PasswordHash, PasswordSalt) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 
 	if err != nil {
@@ -28,7 +28,7 @@ func LoginDB(player *Player, username string, password string) bool {
 		psswrdSalt        []byte
 	)
 
-	err := player.Session.Database().QueryRow(
+	err := app.HabbGo().Database.QueryRow(
 		"SELECT P.PasswordHash, P.PasswordSalt, P.Username FROM Players P WHERE P.Username = ?", username).
 		Scan(&psswrdHash, &psswrdSalt, &uname)
 
@@ -46,7 +46,7 @@ func LoginDB(player *Player, username string, password string) bool {
 }
 
 func LoadBadges(player *Player) {
-	rows, err := player.Session.Database().Query("SELECT P.Badge FROM PlayerBadges P WHERE P.PlayerID = ?", player.Details.Id)
+	rows, err := app.HabbGo().Database.Query("SELECT P.Badge FROM PlayerBadges P WHERE P.PlayerID = ?", player.Details.Id)
 	if err != nil {
 		log.Printf("%v ", err) // TODO properly log error
 	}
@@ -67,7 +67,7 @@ func LoadBadges(player *Player) {
 }
 
 func PlayerExists(p *Player, username string) bool {
-	rows, err := p.Session.Database().Query("SELECT P.ID FROM Players P WHERE P.Username = ?", username)
+	rows, err := app.HabbGo().Database.Query("SELECT P.ID FROM Players P WHERE P.Username = ?", username)
 	if err != nil {
 		log.Printf("%s", err)
 	}
@@ -94,10 +94,9 @@ func fillDetails(p *Player) {
 		"FROM Players P " +
 		"WHERE P.username = ?"
 
-	err := p.Session.Database().QueryRow(query, p.Details.Username).Scan(&p.Details.Id, &p.Details.Username,
-		&p.Details.Sex, &p.Details.Figure, &p.Details.PoolFigure, &p.Details.Film, &p.Details.Credits,
-		&p.Details.Tickets, &p.Details.Motto, &p.Details.ConsoleMotto, &p.Details.CurrentBadge, &p.Details.DisplayBadge,
-		&p.Details.LastOnline, &p.Details.SoundEnabled)
+	err := app.HabbGo().Database.QueryRow(query, p.Details.Username).Scan(&p.Details.Id, &p.Details.Username,
+		&p.Details.Sex, &p.Details.Figure, &p.Details.PoolFigure, &p.Details.Film, &p.Details.Credits, &p.Details.Tickets,
+		&p.Details.Motto, &p.Details.ConsoleMotto, &p.Details.DisplayBadge, &p.Details.LastOnline, &p.Details.SoundEnabled)
 
 	if err != nil {
 		log.Printf("%v ", err) // TODO log database errors properly

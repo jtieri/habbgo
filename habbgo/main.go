@@ -3,10 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
+
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jtieri/HabbGo/habbgo/app"
 	"github.com/jtieri/HabbGo/habbgo/config"
 	"github.com/jtieri/HabbGo/habbgo/server"
-	"log"
 )
 
 func main() {
@@ -23,21 +25,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = db.Ping()
-	if err != nil {
+	// Check that the connection to the DB is alive
+	if err = db.Ping(); err != nil {
 		log.Fatalf("Failed to connect to database %v at %v:%v %v", c.DB.Name, c.DB.Host, c.DB.Port, err)
 	}
 	defer db.Close()
 	log.Printf("Successfully connected to database %v at %v:%v ", c.DB.Name, c.DB.Host, c.DB.Port)
 
-	log.Printf("Setting up in-game services and models...")
-	//navigator.NavigatorService().SetDBCon(db)
-	//navigator.NavigatorService().BuildNavigator()
-
-	//room.RoomService().SetDBConn(db)
+	// Create the global App context for accessing Config and DB across the server
+	app.New(c, db)
 
 	log.Println("Starting the game server... ")
-	gameServer := server.New(c, db)
+	gameServer := server.New()
 	gameServer.Start()
 
 	defer gameServer.Stop()

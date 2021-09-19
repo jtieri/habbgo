@@ -18,7 +18,7 @@ func Login(player *Player) {
 }
 
 func (p *Player) Register(username, figure, gender, email, birthday, createdAt, password string, salt []byte) {
-	err := Register(p.Session.Database(), username, figure, gender, email, birthday, createdAt, password, salt)
+	err := Register(username, figure, gender, email, birthday, createdAt, password, salt)
 	if err != nil {
 		p.LogErr(err)
 	}

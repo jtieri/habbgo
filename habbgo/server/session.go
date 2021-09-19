@@ -3,7 +3,7 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"database/sql"
+	"github.com/jtieri/HabbGo/habbgo/app"
 	logger "github.com/jtieri/HabbGo/habbgo/log"
 	"log"
 	"net"
@@ -18,7 +18,6 @@ import (
 
 type Session struct {
 	connection net.Conn
-	database   *sql.DB
 	buffer     *buffer
 	active     bool
 	server     *Server
@@ -34,7 +33,6 @@ type buffer struct {
 func NewSession(conn net.Conn, server *Server) *Session {
 	return &Session{
 		connection: conn,
-		database:   server.Database,
 		buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
 		active:     true,
 		server:     server,
@@ -102,7 +100,7 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if Config.Server.Debug {
+	if app.HabbGo().Config.Server.Debug {
 		logger.LogOutgoingPacket(session.Address(), packet)
 	}
 }
@@ -129,14 +127,9 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if Config.Server.Debug {
+	if app.HabbGo().Config.Server.Debug {
 		logger.LogOutgoingPacket(session.Address(), packet)
 	}
-}
-
-// Database returns a pointer to a Session's Conn access struct.
-func (session *Session) Database() *sql.DB {
-	return session.database
 }
 
 func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
