@@ -11,12 +11,12 @@ func Handle(p *player.Player, packet *packets.IncomingPacket) {
 
 	if found {
 		if GetConfig().Server.Debug {
-			logger.PrintIncomingPacket(p.Session.Address(), handler, packet)
+			logger.LogIncomingPacket(p.Session.Address(), handler, packet)
 		}
 		handler(p, packet)
 	} else {
 		if GetConfig().Server.Debug {
-			logger.PrintUnknownPacket(p.Session.Address(), packet)
+			logger.LogUnknownPacket(p.Session.Address(), packet)
 		}
 	}
 

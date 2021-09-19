@@ -43,7 +43,7 @@ func SSO(p *player.Player, packet *packets.IncomingPacket) {
 	}
 }
 
-func TryLogin(p *player.Player, packet *packets.IncomingPacket) {
+func TRY_LOGIN(p *player.Player, packet *packets.IncomingPacket) {
 	username := packet.ReadString()
 	password := packet.ReadString()
 

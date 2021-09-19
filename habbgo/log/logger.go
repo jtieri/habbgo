@@ -9,16 +9,16 @@ import (
 	"strings"
 )
 
-func PrintOutgoingPacket(playerAddr string, p *packets.OutgoingPacket) {
+func LogOutgoingPacket(playerAddr string, p *packets.OutgoingPacket) {
 	log.Printf("[%v] [OUTGOING] [%v - %v]: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
 }
 
-func PrintIncomingPacket(playerAddr string, handler func(*player.Player, *packets.IncomingPacket), p *packets.IncomingPacket) {
+func LogIncomingPacket(playerAddr string, handler func(*player.Player, *packets.IncomingPacket), p *packets.IncomingPacket) {
 	hName := getHandlerName(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
 	log.Printf("[%v] [INCOMING] [%v - %v|%v]: %v ", playerAddr, hName, p.Header, p.HeaderId, p.Payload.String())
 }
 
-func PrintUnknownPacket(playerAddr string, p *packets.IncomingPacket) {
+func LogUnknownPacket(playerAddr string, p *packets.IncomingPacket) {
 	log.Printf("[%v] [UNK] [%v - %v]: %v ", playerAddr, p.Header, p.HeaderId, p.Payload.String())
 }
 
