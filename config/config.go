@@ -109,10 +109,10 @@ func defaultConfig() *Config {
 		Debug:    true,
 	}
 	db := &DatabaseCfg{
-		User:     "root",
+		User:     "postgres",
 		Password: "password",
 		Host:     "127.0.0.1",
-		Port:     3306,
+		Port:     5432,
 		Name:     "habbgo",
 	}
 	return &Config{
