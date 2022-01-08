@@ -14,11 +14,9 @@ const dbImageName = "mariadb"
 var db *sql.DB
 
 func TestDatabaseSetup(t *testing.T) {
-	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
 	pool, err := dockertest.NewPool("")
 	require.NoError(t, err)
 
-	// pulls an image, creates a container based on it and runs it
 	t.Logf("Building database container with image: %s...", dbImageName)
 	resource, err := pool.Run(dbImageName, "latest", []string{"MYSQL_ROOT_PASSWORD=secret"})
 	require.NoError(t, err)
