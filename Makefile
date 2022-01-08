@@ -17,7 +17,7 @@ endif
 
 install:
 	@echo "installing habbgo binary..."
-	@go install -mod readonly $(BUILD_FLAGS) ./habbgo
+	@go install -mod readonly $(BUILD_FLAGS) .
 
 build-habbgo-docker:
 	docker build -t jtieri/habbgo:latest -f ./docker/habbgo/Dockerfile .

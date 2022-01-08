@@ -8,19 +8,19 @@ CREATE TABLE IF NOT EXISTS `Players` (
     `SSOToken` TEXT DEFAULT NULL,
     `Sex` ENUM('M','F') NOT NULL DEFAULT 'F',
     `Figure` TEXT NOT NULL DEFAULT '1000118001270012900121001',
-    `PoolFigure` TEXT,
-    `Film` INT DEFAULT 0,
-    `Credits` INT DEFAULT 100,
-    `Tickets` INT DEFAULT 0,
-    `Motto` TEXT DEFAULT 'Project HabbGo.',
-    `ConsoleMotto` TEXT DEFAULT 'HabbGo Rocks!',
+    `PoolFigure` TEXT NOT NULL DEFAULT '',
+    `Film` INT NOT NULL DEFAULT 0,
+    `Credits` INT NOT NULL DEFAULT 100,
+    `Tickets` INT NOT NULL DEFAULT 0,
+    `Motto` TEXT NOT NULL DEFAULT 'Project HabbGo.',
+    `ConsoleMotto` TEXT NOT NULL DEFAULT 'HabbGo Rocks!',
     `DisplayBadge` BOOL NOT NULL DEFAULT true,
     `CurrentBadge` INT,
     `Birthday` DATE NOT NULL,
     `Email` TEXT NOT NULL,
     `SoundEnabled` BOOL NOT NULL DEFAULT true,
     `CreatedOn` DATETIME NOT NULL,
-    `LastOnline` DATETIME,
+    `LastOnline` DATETIME NOT NULL DEFAULT current_timestamp,
     FOREIGN KEY (CurrentBadge) REFERENCES Badges (ID)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS `Badges` (
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `PlayerBadges` (
-    `PlayerID` INT,
-    `Badge` INT,
+    `PlayerID` INT NOT NULL,
+    `Badge` INT NOT NULL,
     FOREIGN KEY (PlayerID) REFERENCES Players (ID) ON DELETE CASCADE,
     FOREIGN KEY (Badge) REFERENCES Badges (ID)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
