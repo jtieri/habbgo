@@ -3,7 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/jtieri/HabbGo/habbweb/controller"
+	"github.com/jtieri/habbgo/web/controller"
 )
 
 func SetupRouter() *gin.Engine {

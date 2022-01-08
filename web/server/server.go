@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jtieri/HabbGo/habbweb/router"
+	"github.com/jtieri/habbgo/web/router"
 )
 
 type WebServer struct {
