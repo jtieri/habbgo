@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/lib/pq v0.0.0-20180327071824-d34b9ff171c2
 	github.com/ory/dockertest/v3 v3.7.0
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/yaml.v2 v2.4.0

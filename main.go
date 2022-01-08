@@ -6,21 +6,25 @@ import (
 	"github.com/jtieri/habbgo/app"
 	"github.com/jtieri/habbgo/config"
 	"github.com/jtieri/habbgo/server"
+	_ "github.com/lib/pq"
 	"log"
-
-	_ "github.com/go-sql-driver/mysql"
 )
+
+const DBDRIVER = "postgres"
 
 func main() {
 	log.Println("Booting up habbgo... ")
 
 	log.Println("Loading config file... ")
-	c := config.LoadConfig("config.yml")
+	c, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("Attempting to make connection with the database... ")
 	host := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", c.DB.User, c.DB.Password, c.DB.Host, c.DB.Port, c.DB.Name)
 
-	db, err := sql.Open("mysql", host)
+	db, err := sql.Open(DBDRIVER, host)
 	if err != nil {
 		log.Fatal(err)
 	}
