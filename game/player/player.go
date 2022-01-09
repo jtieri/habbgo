@@ -31,11 +31,11 @@ type Details struct {
 
 type Session interface {
 	Listen()
-	Send(playerIdentifier string, packet *packets.OutgoingPacket)
+	Send(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket)
 	Queue(packet *packets.OutgoingPacket)
-	Flush(playerIdentifier string, packet *packets.OutgoingPacket)
+	Flush(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket)
 	Address() string
-	GetPacketHandler(headerId int) (func(*Player, *packets.IncomingPacket), bool)
+	GetPacketCommand(headerId int) (func(*Player, *packets.IncomingPacket), bool)
 	Close()
 }
 

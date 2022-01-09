@@ -35,7 +35,7 @@ func NewSession(conn net.Conn, server *Server) *Session {
 		buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
 		active:     true,
 		server:     server,
-		router:     RegisterHandlers(),
+		router:     RegisterCommands(),
 	}
 }
 
@@ -44,7 +44,7 @@ func (session *Session) Listen() {
 	p := player.New(session, session.server.database)
 	reader := bufio.NewReader(session.connection)
 
-	session.Send(session.Address(), messages.HELLO()) // Send packet with Base64 header @@ to initialize connection with client.
+	session.Send(session.Address(), messages.HELLO, messages.HELLO()) // Send packet with Base64 header @@ to initialize connection with client.
 
 	// Listen for incoming packets from a players session
 	for {
@@ -84,11 +84,19 @@ func (session *Session) Listen() {
 }
 
 func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
-	handler, found := p.Session.GetPacketHandler(packet.HeaderId)
+	handler, found := p.Session.GetPacketCommand(packet.HeaderId)
 
 	if found {
 		if debug {
-			logger.LogIncomingPacket(p.Details.Username, handler, packet)
+			// If the user is still logging in we don't have their username for logging so we use
+			// their IP address for logging until handshake is complete
+			// TODO this is kinda ugly, maybe remove this if logging is refactored
+			switch packet.HeaderId {
+			case 206, 202, 5, 6, 181, 4:
+				logger.LogIncomingPacket(p.Session.Address(), handler, packet)
+			default:
+				logger.LogIncomingPacket(p.Details.Username, handler, packet)
+			}
 		}
 		handler(p, packet)
 	} else {
@@ -100,7 +108,7 @@ func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
 }
 
 // Send finalizes an outgoing packet with 0x01 and then attempts to write and flush the packet to a Session's buffer.
-func (session *Session) Send(playerIdentifier string, packet *packets.OutgoingPacket) {
+func (session *Session) Send(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -116,7 +124,7 @@ func (session *Session) Send(playerIdentifier string, packet *packets.OutgoingPa
 	}
 
 	if session.server.config.Debug {
-		logger.LogOutgoingPacket(playerIdentifier, packet)
+		logger.LogOutgoingPacket(playerIdentifier, caller, packet)
 	}
 }
 
@@ -133,7 +141,7 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 }
 
 // Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Session's buffer.
-func (session *Session) Flush(playerIdentifier string, packet *packets.OutgoingPacket) {
+func (session *Session) Flush(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
@@ -143,12 +151,12 @@ func (session *Session) Flush(playerIdentifier string, packet *packets.OutgoingP
 	}
 
 	if session.server.config.Debug {
-		logger.LogOutgoingPacket(playerIdentifier, packet)
+		logger.LogOutgoingPacket(playerIdentifier, caller, packet)
 	}
 }
 
-func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
-	return session.router.GetHandler(headerId)
+func (session *Session) GetPacketCommand(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
+	return session.router.GetCommand(headerId)
 }
 
 func (session *Session) Address() string {

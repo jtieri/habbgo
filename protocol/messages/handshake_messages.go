@@ -76,7 +76,13 @@ func AVAILABLESETS() *packets.OutgoingPacket {
 }
 
 func LOGINOK() *packets.OutgoingPacket {
-	packet := packets.NewOutgoing(3) // Base 64 Header @C
+	packet := packets.NewOutgoing(3) // Base64 Header @C
+	return packet
+}
+
+func LOCALISED_ERROR(errMsg string) *packets.OutgoingPacket {
+	packet := packets.NewOutgoing(33) // Base64 Header @a
+	packet.Write(errMsg)
 	return packet
 }
 

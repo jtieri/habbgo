@@ -10,17 +10,18 @@ import (
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
-func LogOutgoingPacket(username string, p *packets.OutgoingPacket) {
-	log.Printf("[OUTGOING] [%v] [%v - %v]: %v ", username, p.Header, p.HeaderId, p.Payload.String())
+func LogOutgoingPacket(username string, message interface{}, p *packets.OutgoingPacket) {
+	callerName := getHandlerName(runtime.FuncForPC(reflect.ValueOf(message).Pointer()).Name())
+	log.Printf("[OUTGOING] [%v] [%v]: %v \n", username, callerName, p.Payload.String())
 }
 
-func LogIncomingPacket(username string, handler func(*player.Player, *packets.IncomingPacket), p *packets.IncomingPacket) {
-	hName := getHandlerName(runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
-	log.Printf("[INCOMING] [%v] [%v - %v|%v]: %v ", username, hName, p.Header, p.HeaderId, p.Payload.String())
+func LogIncomingPacket(username string, command func(*player.Player, *packets.IncomingPacket), p *packets.IncomingPacket) {
+	commandName := getHandlerName(runtime.FuncForPC(reflect.ValueOf(command).Pointer()).Name())
+	log.Printf("[INCOMING] [%v] [%v]: %v \n", username, commandName, p.Payload.String())
 }
 
 func LogUnknownPacket(username string, p *packets.IncomingPacket) {
-	log.Printf("[UNKNOWN] [%v] [%v - %v]: %v ", username, p.Header, p.HeaderId, p.Payload.String())
+	log.Printf("[UNKNOWN ] [%v] [%v - %v]: %v \n", username, p.Header, p.HeaderId, p.Payload.String())
 }
 
 func getHandlerName(handler string) string {

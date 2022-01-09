@@ -47,5 +47,5 @@ func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 
 	// TODO sort rooms by player count before sending NAVNODEINFO
 
-	player.Session.Send(player.Details.Username, messages.NAVNODEINFO(player, category, nodeMask, subCategories, rooms, currentVisitors, maxVisitors))
+	player.Session.Send(player.Details.Username, messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, nodeMask, subCategories, rooms, currentVisitors, maxVisitors))
 }
