@@ -3,15 +3,16 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"github.com/jtieri/habbgo/game/player"
-	logger "github.com/jtieri/habbgo/log"
-	"github.com/jtieri/habbgo/protocol/composers"
-	"github.com/jtieri/habbgo/protocol/encoding"
-	"github.com/jtieri/habbgo/protocol/packets"
 	"log"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/jtieri/habbgo/game/player"
+	logger "github.com/jtieri/habbgo/log"
+	"github.com/jtieri/habbgo/protocol/encoding"
+	"github.com/jtieri/habbgo/protocol/messages"
+	"github.com/jtieri/habbgo/protocol/packets"
 )
 
 type Session struct {
@@ -43,7 +44,7 @@ func (session *Session) Listen() {
 	p := player.New(session, session.server.database)
 	reader := bufio.NewReader(session.connection)
 
-	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
+	session.Send(session.Address(), messages.HELLO()) // Send packet with Base64 header @@ to initialize connection with client.
 
 	// Listen for incoming packets from a players session
 	for {
@@ -82,8 +83,24 @@ func (session *Session) Listen() {
 	}
 }
 
+func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
+	handler, found := p.Session.GetPacketHandler(packet.HeaderId)
+
+	if found {
+		if debug {
+			logger.LogIncomingPacket(p.Details.Username, handler, packet)
+		}
+		handler(p, packet)
+	} else {
+		if debug {
+			logger.LogUnknownPacket(p.Details.Username, packet)
+		}
+	}
+
+}
+
 // Send finalizes an outgoing packet with 0x01 and then attempts to write and flush the packet to a Session's buffer.
-func (session *Session) Send(packet *packets.OutgoingPacket) {
+func (session *Session) Send(playerIdentifier string, packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -99,7 +116,7 @@ func (session *Session) Send(packet *packets.OutgoingPacket) {
 	}
 
 	if session.server.config.Debug {
-		logger.LogOutgoingPacket(session.Address(), packet)
+		logger.LogOutgoingPacket(playerIdentifier, packet)
 	}
 }
 
@@ -115,8 +132,8 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	}
 }
 
-// Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Sessions's buffer.
-func (session *Session) Flush(packet *packets.OutgoingPacket) {
+// Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Session's buffer.
+func (session *Session) Flush(playerIdentifier string, packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
@@ -126,7 +143,7 @@ func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	}
 
 	if session.server.config.Debug {
-		logger.LogOutgoingPacket(session.Address(), packet)
+		logger.LogOutgoingPacket(playerIdentifier, packet)
 	}
 }
 

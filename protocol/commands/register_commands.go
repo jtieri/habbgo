@@ -1,4 +1,4 @@
-package handlers
+package commands
 
 import (
 	"net/mail"
@@ -8,7 +8,7 @@ import (
 	"github.com/jtieri/habbgo/crypto"
 	"github.com/jtieri/habbgo/date"
 	"github.com/jtieri/habbgo/game/player"
-	"github.com/jtieri/habbgo/protocol/composers"
+	"github.com/jtieri/habbgo/protocol/messages"
 	"github.com/jtieri/habbgo/protocol/packets"
 	"github.com/jtieri/habbgo/text"
 )
@@ -28,31 +28,31 @@ const (
 )
 
 func GETAVAILABLESETS(p *player.Player, packet *packets.IncomingPacket) {
-	p.Session.Send(composers.ComposeAvailableSets())
+	p.Session.Send(p.Details.Username, messages.AVAILABLESETS())
 }
 
 func GDATE(p *player.Player, packet *packets.IncomingPacket) {
-	p.Session.Send(composers.DATE(date.GetCurrentDate()))
+	p.Session.Send(p.Details.Username, messages.DATE(date.GetCurrentDate()))
 }
 
 func APPROVENAME(p *player.Player, packet *packets.IncomingPacket) {
 	name := text.Filter(packet.ReadString())
-	p.Session.Send(composers.APPROVENAMEREPLY(checkName(p, name)))
+	p.Session.Send(p.Details.Username, messages.APPROVENAMEREPLY(checkName(p, name)))
 }
 
 func APPROVE_PASSWORD(p *player.Player, packet *packets.IncomingPacket) {
 	username := packet.ReadString()
 	password := packet.ReadString()
-	p.Session.Send(composers.PASSWORD_APPROVED(checkPassword(p, username, password)))
+	p.Session.Send(p.Details.Username, messages.PASSWORD_APPROVED(checkPassword(p, username, password)))
 }
 
 func APPROVEEMAIL(p *player.Player, packet *packets.IncomingPacket) {
 	email := packet.ReadString()
 
 	if _, err := mail.ParseAddress(email); err != nil {
-		p.Session.Send(composers.EMAIL_REJECTED())
+		p.Session.Send(p.Details.Username, messages.EMAIL_REJECTED())
 	} else {
-		p.Session.Send(composers.EMAIL_APPROVED())
+		p.Session.Send(p.Details.Username, messages.EMAIL_APPROVED())
 	}
 }
 

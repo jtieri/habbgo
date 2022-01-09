@@ -1,4 +1,4 @@
-package composers
+package messages
 
 import (
 	"github.com/jtieri/habbgo/game/navigator"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ComposeNavNodeInfo(player *player.Player, cat *navigator.Category, nodeMask bool, subcats []*navigator.Category,
+func NAVNODEINFO(player *player.Player, cat *navigator.Category, nodeMask bool, subcats []*navigator.Category,
 	rooms []*room.Room, currentVisitors int, maxVisitors int) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(220) // Base64 Header C\
 
