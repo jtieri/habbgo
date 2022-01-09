@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS players(
     tickets INT NOT NULL DEFAULT 0,
     motto TEXT NOT NULL DEFAULT 'Project HabbGo.',
     console_motto TEXT NOT NULL DEFAULT 'HabbGo Rocks!',
-    display_badge BOOL NOT NULL DEFAULT true,
     birthday DATE NOT NULL,
     email TEXT NOT NULL,
     sound_enabled BOOL NOT NULL DEFAULT true,
@@ -25,7 +24,8 @@ CREATE TABLE IF NOT EXISTS players(
 
 CREATE TABLE IF NOT EXISTS badges(
     id   SERIAL,
-    Code VARCHAR(3) UNIQUE NOT NULL,
+    code VARCHAR(3) UNIQUE NOT NULL,
+    display BOOL NOT NULL DEFAULT false,
     PRIMARY KEY (id)
 );
 

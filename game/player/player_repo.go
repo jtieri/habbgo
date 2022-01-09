@@ -89,8 +89,8 @@ func UpdateLastOnline(datetime string) {
 }
 
 func fillDetails(p *Player) {
-	query := "SELECT P.ID, P.Username, P.Sex, P.Figure, P.PoolFigure, P.Film, P.Credits, P.Tickets, P.Motto, " +
-		"P.ConsoleMotto, P.DisplayBadge, P.LastOnline, P.SoundEnabled " +
+	query := "SELECT P.id, P.username, P.sex, P.figure, P.pool_figure, P.film, P.credits, P.tickets, P.motto, " +
+		"P.console_motto, P.last_online, P.sound_enabled " +
 		"FROM Players P " +
 		"WHERE P.username = $1"
 
