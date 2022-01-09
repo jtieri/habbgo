@@ -37,7 +37,7 @@ func SSO(p *player.Player, packet *packets.IncomingPacket) {
 
 	// TODO if p login with token is success login, otherwise send LOCALISED ERROR & disconnect from server
 	if token == "" {
-		player.Login(p)
+		p.Login()
 	} else {
 
 	}
@@ -48,7 +48,7 @@ func TRY_LOGIN(p *player.Player, packet *packets.IncomingPacket) {
 	password := packet.ReadString()
 
 	if player.LoginDB(p, username, password) {
-		player.Login(p)
+		p.Login()
 		p.Session.Send(composers.ComposeLoginOk())
 	} else {
 		// TODO send LOCALISED ERROR

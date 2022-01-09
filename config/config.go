@@ -12,23 +12,15 @@ import (
 var defaultHome = os.ExpandEnv("$HOME/.habbgo")
 
 type Config struct {
-	Server *ServerCfg
-	DB     *DatabaseCfg
-}
-
-type ServerCfg struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	MaxConns int    `yaml:"maxconns"`
-	Debug    bool   `yaml:"debug"`
-}
-
-type DatabaseCfg struct {
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int16  `yaml:"port"`
-	Name     string `yaml:"name"`
+	ServerHost        string `yaml:"server-host"`
+	ServerPort        int    `yaml:"server-port"`
+	MaxConnsPerPlayer int    `yaml:"player-maxconns"`
+	Debug             bool   `yaml:"debug"`
+	DBUser            string `yaml:"db-user"`
+	DBPassword        string `yaml:"db-password"`
+	DBHost            string `yaml:"db-host"`
+	DBPort            int16  `yaml:"db-port"`
+	DBName            string `yaml:"db-name"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -102,21 +94,15 @@ func InitConfig() (*Config, error) {
 }
 
 func defaultConfig() *Config {
-	server := &ServerCfg{
-		Host:     "127.0.0.1",
-		Port:     11235,
-		MaxConns: 2,
-		Debug:    true,
-	}
-	db := &DatabaseCfg{
-		User:     "postgres",
-		Password: "password",
-		Host:     "127.0.0.1",
-		Port:     5432,
-		Name:     "habbgo",
-	}
 	return &Config{
-		Server: server,
-		DB:     db,
+		ServerHost:        "127.0.0.1",
+		ServerPort:        11235,
+		MaxConnsPerPlayer: 2,
+		Debug:             true,
+		DBUser:            "postgres",
+		DBPassword:        "password",
+		DBHost:            "127.0.0.1",
+		DBPort:            5432,
+		DBName:            "habbgo",
 	}
 }

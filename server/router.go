@@ -2,7 +2,8 @@ package server
 
 import (
 	"github.com/jtieri/habbgo/game/player"
-	handlers2 "github.com/jtieri/habbgo/protocol/handlers"
+	logger "github.com/jtieri/habbgo/log"
+	"github.com/jtieri/habbgo/protocol/handlers"
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
@@ -13,6 +14,22 @@ type Router struct {
 func (r *Router) GetHandler(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
 	h, found := r.RegisteredPackets[headerId]
 	return h, found
+}
+
+func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
+	handler, found := p.Session.GetPacketHandler(packet.HeaderId)
+
+	if found {
+		if debug {
+			logger.LogIncomingPacket(p.Session.Address(), handler, packet)
+		}
+		handler(p, packet)
+	} else {
+		if debug {
+			logger.LogUnknownPacket(p.Session.Address(), packet)
+		}
+	}
+
 }
 
 func RegisterHandlers() (r *Router) {
@@ -27,36 +44,36 @@ func RegisterHandlers() (r *Router) {
 }
 
 func (r *Router) RegisterHandshakeHandlers() {
-	r.RegisteredPackets[206] = handlers2.InitCrypto
-	r.RegisteredPackets[202] = handlers2.GenerateKey  // older clients
-	r.RegisteredPackets[2002] = handlers2.GenerateKey // newer clients
-	r.RegisteredPackets[5] = handlers2.VersionCheck   // 1170 - VERSIONCHECK in later clients? v26+? // TODO figure out exact client revisions when these packet headers change
-	r.RegisteredPackets[6] = handlers2.UniqueID
-	r.RegisteredPackets[181] = handlers2.GetSessionParams
-	r.RegisteredPackets[204] = handlers2.SSO
-	r.RegisteredPackets[4] = handlers2.TRY_LOGIN
-	r.RegisteredPackets[207] = handlers2.SECRETKEY
+	r.RegisteredPackets[206] = handlers.InitCrypto
+	r.RegisteredPackets[202] = handlers.GenerateKey  // older clients
+	r.RegisteredPackets[2002] = handlers.GenerateKey // newer clients
+	r.RegisteredPackets[5] = handlers.VersionCheck   // 1170 - VERSIONCHECK in later clients? v26+? // TODO figure out exact client revisions when these packet headers change
+	r.RegisteredPackets[6] = handlers.UniqueID
+	r.RegisteredPackets[181] = handlers.GetSessionParams
+	r.RegisteredPackets[204] = handlers.SSO
+	r.RegisteredPackets[4] = handlers.TRY_LOGIN
+	r.RegisteredPackets[207] = handlers.SECRETKEY
 }
 
 func (r *Router) RegisterRegistrationHandlers() {
-	r.RegisteredPackets[9] = handlers2.GETAVAILABLESETS
-	r.RegisteredPackets[49] = handlers2.GDATE
-	r.RegisteredPackets[42] = handlers2.APPROVENAME
-	r.RegisteredPackets[203] = handlers2.APPROVE_PASSWORD
-	r.RegisteredPackets[197] = handlers2.APPROVEEMAIL
-	r.RegisteredPackets[43] = handlers2.REGISTER
+	r.RegisteredPackets[9] = handlers.GETAVAILABLESETS
+	r.RegisteredPackets[49] = handlers.GDATE
+	r.RegisteredPackets[42] = handlers.APPROVENAME
+	r.RegisteredPackets[203] = handlers.APPROVE_PASSWORD
+	r.RegisteredPackets[197] = handlers.APPROVEEMAIL
+	r.RegisteredPackets[43] = handlers.REGISTER
 }
 
 func (r *Router) RegisterPlayerHandlers() {
-	r.RegisteredPackets[7] = handlers2.GetInfo
-	r.RegisteredPackets[8] = handlers2.GetCredits
-	r.RegisteredPackets[157] = handlers2.GetAvailableBadges
-	r.RegisteredPackets[228] = handlers2.GetSoundSetting
-	r.RegisteredPackets[315] = handlers2.TestLatency
+	r.RegisteredPackets[7] = handlers.GetInfo
+	r.RegisteredPackets[8] = handlers.GetCredits
+	r.RegisteredPackets[157] = handlers.GetAvailableBadges
+	r.RegisteredPackets[228] = handlers.GetSoundSetting
+	r.RegisteredPackets[315] = handlers.TestLatency
 }
 
 func (r *Router) RegisterNavigatorHandlers() {
-	r.RegisteredPackets[150] = handlers2.Navigate
+	r.RegisteredPackets[150] = handlers.Navigate
 	// 151: GETUSERFLATCATS
 	// 21: GETFLATINFO
 	// 23: DELETEFLAT

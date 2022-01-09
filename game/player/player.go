@@ -1,12 +1,14 @@
 package player
 
 import (
+	"database/sql"
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
 type Player struct {
-	Session Session
-	Details *Details
+	Session  Session
+	Details  *Details
+	Database *sql.DB
 }
 
 type Details struct {
@@ -37,9 +39,10 @@ type Session interface {
 	Close()
 }
 
-func New(session Session) *Player {
+func New(session Session, database *sql.DB) *Player {
 	return &Player{
-		Session: session,
-		Details: &Details{},
+		Session:  session,
+		Database: database,
+		Details:  &Details{},
 	}
 }

@@ -1,29 +1,34 @@
 package server
 
 import (
+	"database/sql"
+	"github.com/jtieri/habbgo/config"
 	"log"
 	"net"
 	"os"
 	"strconv"
 	"sync"
-
-	"github.com/jtieri/habbgo/app"
 )
 
 type Server struct {
 	activeSessions []*Session
+	config         *config.Config
+	database       *sql.DB
 }
 
 // New returns a pointer to a newly allocated server struct.
-func New() *Server {
-	return &Server{}
+func New(config *config.Config, database *sql.DB) *Server {
+	return &Server{
+		config:   config,
+		database: database,
+	}
 }
 
 // Start will setup the game server, start listening for incoming connections, and handle connections appropriately.
 func (server *Server) Start() {
-	listener, err := net.Listen("tcp", app.Habbgo().Config.Server.Host+":"+strconv.Itoa(app.Habbgo().Config.Server.Port))
+	listener, err := net.Listen("tcp", server.config.ServerHost+":"+strconv.Itoa(server.config.ServerPort))
 	if err != nil {
-		log.Fatalf("There was an issue starting the game server on port %v.", app.Habbgo().Config.Server.Port) // TODO properly handle errors
+		log.Fatalf("There was an issue starting the game server on port %v.", server.config.ServerPort) // TODO properly handle errors
 	}
 	log.Printf("Successfully started the game server at %v", listener.Addr().String())
 	defer listener.Close()
@@ -39,7 +44,7 @@ func (server *Server) Start() {
 
 		// Check that there aren't multiple sessions for a given IP address
 		// TODO kick a session to make room for the new one
-		if server.sessionsFromSameAddr(conn) < app.Habbgo().Config.Server.MaxConns {
+		if server.sessionsFromSameAddr(conn) < server.config.MaxConnsPerPlayer {
 			session := NewSession(conn, server)
 
 			log.Printf("New session created for address: %v", conn.LocalAddr().String())

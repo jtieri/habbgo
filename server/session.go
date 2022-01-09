@@ -3,12 +3,11 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"github.com/jtieri/habbgo/app"
 	"github.com/jtieri/habbgo/game/player"
 	logger "github.com/jtieri/habbgo/log"
 	"github.com/jtieri/habbgo/protocol/composers"
 	"github.com/jtieri/habbgo/protocol/encoding"
-	packets2 "github.com/jtieri/habbgo/protocol/packets"
+	"github.com/jtieri/habbgo/protocol/packets"
 	"log"
 	"net"
 	"strings"
@@ -41,7 +40,7 @@ func NewSession(conn net.Conn, server *Server) *Session {
 
 // Listen starts listening for incoming data from a Session and handles it appropriately.
 func (session *Session) Listen() {
-	p := player.New(session)
+	p := player.New(session, session.server.database)
 	reader := bufio.NewReader(session.connection)
 
 	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
@@ -77,14 +76,14 @@ func (session *Session) Listen() {
 			rawHeader[i], _ = payload.ReadByte()
 		}
 
-		packet := packets2.NewIncoming(rawHeader, payload)
+		packet := packets.NewIncoming(rawHeader, payload)
 
-		go Handle(p, packet) // Handle packets coming in from p's Session
+		go Handle(p, packet, session.server.config.Debug) // Handle packets coming in from p's Session
 	}
 }
 
 // Send finalizes an outgoing packet with 0x01 and then attempts to write and flush the packet to a Session's buffer.
-func (session *Session) Send(packet *packets2.OutgoingPacket) {
+func (session *Session) Send(packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -99,13 +98,13 @@ func (session *Session) Send(packet *packets2.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if app.Habbgo().Config.Server.Debug {
+	if session.server.config.Debug {
 		logger.LogOutgoingPacket(session.Address(), packet)
 	}
 }
 
 // Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
-func (session *Session) Queue(packet *packets2.OutgoingPacket) {
+func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -117,7 +116,7 @@ func (session *Session) Queue(packet *packets2.OutgoingPacket) {
 }
 
 // Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Sessions's buffer.
-func (session *Session) Flush(packet *packets2.OutgoingPacket) {
+func (session *Session) Flush(packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
@@ -126,22 +125,26 @@ func (session *Session) Flush(packet *packets2.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if app.Habbgo().Config.Server.Debug {
+	if session.server.config.Debug {
 		logger.LogOutgoingPacket(session.Address(), packet)
 	}
 }
 
-func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *packets2.IncomingPacket), bool) {
+func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
 	return session.router.GetHandler(headerId)
 }
 
 func (session *Session) Address() string {
-	return strings.Split(session.connection.RemoteAddr().String(), ":")[0] // split ip:port at : and return ip part
+	// split ip:port at : and return ip part
+	return strings.Split(session.connection.RemoteAddr().String(), ":")[0]
 }
 
 // Close disconnects a Session from the server.
 func (session *Session) Close() {
-	log.Printf("Closing session for address: %v ", session.Address())
+	if session.server.config.Debug {
+		log.Printf("Closing session for address: %v ", session.Address())
+	}
+
 	session.server.RemoveSession(session)
 	session.server = nil
 	session.buffer = nil
