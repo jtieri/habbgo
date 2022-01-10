@@ -28,16 +28,16 @@ func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 		return
 	}
 
-	subCategories := navigator.NavigatorService().CategoriesByParentId(category.Id)
+	subCategories := navigator.NavigatorService().CategoriesByParentId(category.ID)
 	// sort categories by player count
 
 	currentVisitors := navigator.CurrentVisitors(category)
 	maxVisitors := navigator.MaxVisitors(category)
 
 	var rooms []*room.Room
-	if category.Public {
+	if category.IsPublic {
 		for _, room := range roomService.ReplaceRooms(roomService.RoomsByPlayerId(0)) {
-			if room.Details.CatId == category.Id && (!nodeMask) && room.Details.CurrentVisitors < room.Details.MaxVisitors {
+			if room.Details.CatId == category.ID && (!nodeMask) && room.Details.CurrentVisitors < room.Details.MaxVisitors {
 				rooms = append(rooms, room)
 			}
 		}

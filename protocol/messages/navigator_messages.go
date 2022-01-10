@@ -14,9 +14,9 @@ func NAVNODEINFO(player *player.Player, cat *navigator.Category, nodeMask bool, 
 	p := packets.NewOutgoing(220) // Base64 Header C\
 
 	p.WriteBool(nodeMask) // hideCategory
-	p.WriteInt(cat.Id)
+	p.WriteInt(cat.ID)
 
-	if cat.Public {
+	if cat.IsPublic {
 		p.WriteInt(0)
 	} else {
 		p.WriteInt(2)
@@ -25,9 +25,9 @@ func NAVNODEINFO(player *player.Player, cat *navigator.Category, nodeMask bool, 
 	p.WriteString(cat.Name)
 	p.WriteInt(currentVisitors)
 	p.WriteInt(maxVisitors)
-	p.WriteInt(cat.Pid)
+	p.WriteInt(cat.ParentID)
 
-	if !cat.Public {
+	if !cat.IsPublic {
 		p.WriteInt(len(rooms))
 	}
 
@@ -78,12 +78,12 @@ func NAVNODEINFO(player *player.Player, cat *navigator.Category, nodeMask bool, 
 			continue
 		}
 
-		p.WriteInt(subcat.Id)
+		p.WriteInt(subcat.ID)
 		p.WriteInt(0)
 		p.WriteString(subcat.Name)
 		p.WriteInt(navigator.CurrentVisitors(subcat)) // writeInt currentVisitors
 		p.WriteInt(navigator.MaxVisitors(subcat))     // writeInt maxVisitors
-		p.WriteInt(cat.Id)
+		p.WriteInt(cat.ID)
 	}
 
 	return p

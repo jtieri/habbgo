@@ -42,7 +42,7 @@ func (ns *navService) BuildNavigator() {
 // CategoryById retrieves a navigator category given the int parameter id and returns it if there is a match.
 func (ns *navService) CategoryById(id int) *Category {
 	for _, cat := range ns.nav.Categories {
-		if cat.Id == id {
+		if cat.ID == id {
 			return &cat
 		}
 	}
@@ -55,7 +55,7 @@ func (ns *navService) CategoriesByParentId(pid int) []*Category {
 	var categories []*Category
 
 	for _, cat := range ns.nav.Categories {
-		if cat.Pid == pid {
+		if cat.ParentID == pid {
 			categories = append(categories, &cat)
 		}
 	}
@@ -67,7 +67,7 @@ func CurrentVisitors(cat *Category) int {
 	visitors := 0
 
 	for _, r := range room.RoomService().Rooms() {
-		if r.Details.CatId == cat.Id {
+		if r.Details.CatId == cat.ID {
 			visitors += r.Details.CurrentVisitors
 		}
 	}
@@ -79,7 +79,7 @@ func MaxVisitors(cat *Category) int {
 	visitors := 0
 
 	for _, r := range room.RoomService().Rooms() {
-		if r.Details.CatId == cat.Id {
+		if r.Details.CatId == cat.ID {
 			visitors += r.Details.MaxVisitors
 		}
 	}
