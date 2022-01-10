@@ -89,15 +89,19 @@ func UpdateLastOnline(datetime string) {
 
 func fillDetails(p *Player) {
 	query := "SELECT P.id, P.username, P.sex, P.figure, P.pool_figure, P.film, P.credits, P.tickets, P.motto, " +
-		"P.console_motto, P.last_online, P.sound_enabled " +
+		"P.console_motto, P.last_online, P.sound_enabled, P.Rank " +
 		"FROM Players P " +
 		"WHERE P.username = $1"
 
+	var tmpRank string
 	err := p.Database.QueryRow(query, p.Details.Username).Scan(&p.Details.Id, &p.Details.Username,
 		&p.Details.Sex, &p.Details.Figure, &p.Details.PoolFigure, &p.Details.Film, &p.Details.Credits,
-		&p.Details.Tickets, &p.Details.Motto, &p.Details.ConsoleMotto, &p.Details.LastOnline, &p.Details.SoundEnabled)
+		&p.Details.Tickets, &p.Details.Motto, &p.Details.ConsoleMotto, &p.Details.LastOnline, &p.Details.SoundEnabled,
+		&tmpRank)
 
 	if err != nil {
 		log.Printf("%v ", err) // TODO log database errors properly
 	}
+
+	p.Details.PlayerRank = PlayerRank(tmpRank)
 }
