@@ -33,5 +33,42 @@ CREATE TABLE IF NOT EXISTS player_badges (
     player_id INT NOT NULL,
     badge_id INT NOT NULL,
     FOREIGN KEY (player_id) REFERENCES Players(id) ON DELETE CASCADE,
-    FOREIGN KEY (badge_id) REFERENCES Badges(id)
+    FOREIGN KEY (badge_id) REFERENCES Badges(id),
+    PRIMARY KEY (player_id, badge_id)
 );
+
+CREATE TABLE IF NOT EXISTS room_categories (
+    id SERIAL,
+    parent_id INT NOT NULL,
+    order_id INT NOT NULL,
+    name TEXT NOT NULL,
+    is_node BOOL NOT NULL DEFAULT false,
+    is_public BOOL NOT NULL DEFAULT false,
+    is_trading BOOL NOT NULL DEFAULT false,
+    min_rank_access INT NOT NULL DEFAULT 1,
+    min_rank_setflatcat INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (id)
+);
+
+INSERT INTO room_categories (id, order_id, parent_id, is_node, name, is_public, is_trading, min_rank_access, min_rank_setflatcat)
+VALUES (2, 0, 0, false, 'No category', false, false, 1, 1),
+       (3, 0, 0, true, 'Public Rooms', true, false, 1, 6),
+       (4, 0, 0, true, 'Guest Rooms', false, false, 1, 6),
+       (5, 0, 3, false, 'Entertainment', true, false, 1, 6),
+       (6, 0, 3, false, 'Restaurants and Cafes', true, false, 1, 6),
+       (7, 0, 3, false, 'Lounges and Clubs', true, false, 1, 6),
+       (8, 0, 3, false, 'Club-only Spaces', true, false, 1, 6),
+       (9, 0, 3, false, 'Parks and Gardens', true, false, 1, 6),
+       (10, 0, 3, false, 'Swimming Pools', true, false, 1, 6),
+       (11, 0, 3, false, 'The Lobbies', true, false, 1, 6),
+       (12, -1, 3, false, 'The Hallways', true, false, 1, 6),
+       (13, 0, 3, false, 'Games', true, false, 1, 6),
+       (101, 0, 4, false, 'Staff HQ', false, true, 4, 5),
+       (112, 0, 4, false, 'Restaurant, Bar & Night Club Rooms', false, false, 1, 1),
+       (113, 0, 4, false, 'Trade floor', false, true, 1, 1),
+       (114, 0, 4, false, 'Chill, Chat & Discussion Rooms', false, false, 1, 1),
+       (115, 0, 4, false, 'Hair Salons & Modelling Rooms', false, false, 1, 1),
+       (116, 0, 4, false, 'Maze & Theme Park Rooms', false, false, 1, 1),
+       (117, 0, 4, false, 'Gaming & Race Rooms', false, false, 1, 1),
+       (118, 0, 4, false, 'Help Centre Rooms', false, false, 1, 1),
+       (120, 0, 4, false, 'Miscellaneous', false, false, 1, 1);
