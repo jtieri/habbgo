@@ -9,11 +9,6 @@ import (
 	"log"
 )
 
-const (
-	DBDRIVER = "postgres"
-	SSLMODE  = "disable"
-)
-
 func main() {
 	log.Println("Booting up habbgo... ")
 
@@ -24,9 +19,9 @@ func main() {
 	}
 
 	log.Println("Attempting to make connection with the database... ")
-	host := fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s sslmode=%s", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName, SSLMODE)
+	host := fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s sslmode=%s", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName, c.DBSSLMode)
 
-	db, err := sql.Open(DBDRIVER, host)
+	db, err := sql.Open(c.DBDriver, host)
 	if err != nil {
 		log.Fatal(err)
 	}

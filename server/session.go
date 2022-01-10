@@ -15,6 +15,7 @@ import (
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
+// Session represents a players underlying network session and connection to the server
 type Session struct {
 	connection net.Conn
 	buffer     *buffer
@@ -50,11 +51,11 @@ func (session *Session) Listen() {
 	for {
 		// Attempt to read three bytes; client->server packets in FUSEv0.2.0 begin with 3 byte Base64 encoded length.
 		encodedLen := make([]byte, 3)
+
 		for i := 0; i < 3; i++ {
 			b, err := reader.ReadByte()
-
 			if err != nil {
-				// TODO handle errors parsing packets
+				log.Printf("There was an error while reading from %s's buffer. Err: %v \n", session.Address(), err)
 				session.Close()
 				return
 			}
@@ -65,8 +66,14 @@ func (session *Session) Listen() {
 		// Check if data is junk before handling
 		rawPacket := make([]byte, length)
 		bytesRead, err := reader.Read(rawPacket)
-		if length == 0 || err != nil || bytesRead < length {
-			log.Println("Junk packet received.") // TODO handle logging junk packets
+		if err != nil {
+			log.Printf("There was an error while reading from %s's buffer. Err: %v \n", session.Address(), err)
+			continue
+		} else if length == 0 {
+			log.Println("Junk packet received, packet length is 0")
+			continue
+		} else if bytesRead < length {
+			log.Printf("Packet length mismatch. Expected {%d bytes} but received {%d bytes} \n", length, bytesRead)
 			continue
 		}
 
@@ -79,15 +86,18 @@ func (session *Session) Listen() {
 
 		packet := packets.NewIncoming(rawHeader, payload)
 
-		go Handle(p, packet, session.server.config.Debug) // Handle packets coming in from p's Session
+		// Handle packets coming in from p's Session
+		go Handle(p, packet, session.server.config.Debug)
 	}
 }
 
+// Handle attempts to handle an incoming packet from a Players Session if it's registered in the Router
 func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
 	handler, found := p.Session.GetPacketCommand(packet.HeaderId)
 
 	if found {
 		if debug {
+			// Check if the incoming packet is a handshake packet.
 			// If the user is still logging in we don't have their username for logging so we use
 			// their IP address for logging until handshake is complete
 			// TODO this is kinda ugly, maybe remove this if logging is refactored
@@ -107,7 +117,8 @@ func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
 
 }
 
-// Send finalizes an outgoing packet with 0x01 and then attempts to write and flush the packet to a Session's buffer.
+// Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer
+// before flushing the buffer.
 func (session *Session) Send(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
@@ -128,7 +139,7 @@ func (session *Session) Send(playerIdentifier string, caller interface{}, packet
 	}
 }
 
-// Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
+// Queue finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
 func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
@@ -140,7 +151,7 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	}
 }
 
-// Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Session's buffer.
+// Flush attempts flush the packet to a Session's buffer.
 func (session *Session) Flush(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -155,12 +166,15 @@ func (session *Session) Flush(playerIdentifier string, caller interface{}, packe
 	}
 }
 
+// GetPacketCommand attempts to retrieve a registered Command from the Router
 func (session *Session) GetPacketCommand(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
 	return session.router.GetCommand(headerId)
 }
 
+// Address returns the IP address from a Session's connection
+// Splits the address (e.g. 127.0.0.1:1234) and returns the IP part without the port
 func (session *Session) Address() string {
-	// split ip:port at : and return ip part
+	//
 	return strings.Split(session.connection.RemoteAddr().String(), ":")[0]
 }
 

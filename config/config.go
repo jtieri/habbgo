@@ -22,6 +22,8 @@ type Config struct {
 	DBHost            string `yaml:"db-host"`
 	DBPort            int16  `yaml:"db-port"`
 	DBName            string `yaml:"db-name"`
+	DBDriver          string `yaml:"db-driver"`
+	DBSSLMode         string `yaml:"db-ssl-mode"`
 }
 
 // LoadConfig will attempt to load the config file from the system suitable location for config files, as per
@@ -97,5 +99,7 @@ func defaultConfig() *Config {
 		DBHost:            "127.0.0.1",
 		DBPort:            5432,
 		DBName:            "habbgo",
+		DBDriver:          "postgres",
+		DBSSLMode:         "disable",
 	}
 }

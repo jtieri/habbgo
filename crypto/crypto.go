@@ -11,11 +11,9 @@ const SALTSIZE = 16 // default password salt size in bytes
 // GenerateRandomSalt creates a new slice of bytes and generates a random salt using the cryptographically secure CSPRNG
 func GenerateRandomSalt(saltSize int) []byte {
 	salt := make([]byte, saltSize)
-
 	if _, err := rand.Read(salt[:]); err != nil {
 		panic(err) // TODO handle error gracefully
 	}
-
 	return salt
 }
 

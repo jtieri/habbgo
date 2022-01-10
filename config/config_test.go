@@ -9,16 +9,6 @@ import (
 	"testing"
 )
 
-func TestLoadConfig(t *testing.T) {
-	home, err := ioutil.TempDir("", "")
-	require.NoError(t, err)
-
-	cfg := path.Join(home, "config.yaml")
-	LoadConfig()
-	_, err = os.Stat(cfg)
-	require.NoError(t, err)
-}
-
 func TestCreatesDefaultConfig(t *testing.T) {
 	home, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
