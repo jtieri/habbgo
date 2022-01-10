@@ -1,4 +1,4 @@
-package composers
+package messages
 
 import "github.com/jtieri/habbgo/protocol/packets"
 

@@ -2,7 +2,7 @@ package player
 
 import "fmt"
 
-func Login(player *Player) {
+func (p *Player) Login() {
 	// Set player logged in & ping ready for latency test
 	// Possibly add player to a list of online players? Health endpoint with server stats?
 	// Save current time to Conn for players last online time
@@ -10,7 +10,7 @@ func Login(player *Player) {
 	// Check if player is banned & if so send USER_BANNED
 	// Log IP address to Conn
 
-	LoadBadges(player)
+	LoadBadges(p)
 
 	// If Config has alerts enabled, send player ALERT
 
@@ -18,7 +18,7 @@ func Login(player *Player) {
 }
 
 func (p *Player) Register(username, figure, gender, email, birthday, createdAt, password string, salt []byte) {
-	err := Register(username, figure, gender, email, birthday, createdAt, password, salt)
+	err := Register(p, username, figure, gender, email, birthday, createdAt, password, salt)
 	if err != nil {
 		p.LogErr(err)
 	}

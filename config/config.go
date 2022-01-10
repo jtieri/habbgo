@@ -1,80 +1,105 @@
 package config
 
 import (
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
+
+	"github.com/adrg/xdg"
+	"gopkg.in/yaml.v2"
 )
 
+var defaultSubPath = path.Join("habbgo", "config", "config.yaml")
+
 type Config struct {
-	Server *ServerCfg
-	DB     *DatabaseCfg
+	ServerHost        string `yaml:"server-host"`
+	ServerPort        int    `yaml:"server-port"`
+	MaxConnsPerPlayer int    `yaml:"player-maxconns"`
+	Debug             bool   `yaml:"debug"`
+	DBUser            string `yaml:"db-user"`
+	DBPassword        string `yaml:"db-password"`
+	DBHost            string `yaml:"db-host"`
+	DBPort            int16  `yaml:"db-port"`
+	DBName            string `yaml:"db-name"`
+	DBDriver          string `yaml:"db-driver"`
+	DBSSLMode         string `yaml:"db-ssl-mode"`
 }
 
-type ServerCfg struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	MaxConns int    `yaml:"maxconns"`
-	Debug    bool   `yaml:"debug"`
-}
-
-type DatabaseCfg struct {
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int16  `yaml:"port"`
-	Name     string `yaml:"name"`
-}
-
-func LoadConfig(file string) *Config {
+// LoadConfig will attempt to load the config file from the system suitable location for config files, as per
+// XDG Base Directory Specification, and upon failure will initialize the default config file in this same location
+func LoadConfig() (*Config, error) {
 	c := &Config{}
-	data, err := ioutil.ReadFile(file)
+	defaultCfgPath := path.Join(xdg.ConfigHome, defaultSubPath)
 
+	// search for the config file & if it exists read it or else initialize default config file
+	configFilePath, err := xdg.SearchConfigFile(defaultSubPath)
 	if err != nil {
-		log.Println("Failed to read config file 'config.yml'")
-		log.Println("Creating default config file...")
-		c = InitDefaultConfig()
+		log.Printf("Failed to read config file %s \n", defaultCfgPath)
+		log.Printf("Creating default config file %s... \n", defaultCfgPath)
 
-		bz, err := yaml.Marshal(c)
+		c, err = InitConfig()
 		if err != nil {
-			log.Fatal("An error occured while writing the default config file...")
+			return nil, err
 		}
 
-		err = os.WriteFile(file, bz, 0644)
-		if err != nil {
-			log.Fatal("An error occured while writing the default config file...")
-		}
-
-		log.Println("Successfully created the default config file")
+		log.Printf("Successfully created the default config file %s \n", defaultCfgPath)
 	} else {
+		data, err := ioutil.ReadFile(configFilePath)
 		err = yaml.Unmarshal(data, &c)
 		if err != nil {
-			log.Fatal("Failed to unmarshal config file 'config.yml', check that its format is correct & try again.", err)
+			return nil, err
 		}
-
-		log.Println("The file 'config.yml' has been successfully loaded.")
+		log.Printf("The file %s has been successfully loaded \n", configFilePath)
 	}
 
-	return c
+	return c, nil
 }
 
-func InitDefaultConfig() *Config {
-	server := &ServerCfg{
-		Host:     "127.0.0.1",
-		Port:     11235,
-		MaxConns: 2,
-		Debug:    true,
+// InitConfig will attempt to initialize the default config file in a system suitable location for config files, as per
+// XDG Base Directory Specification.
+func InitConfig() (*Config, error) {
+	var c *Config
+
+	// retrieve a suitable location for the specified config file
+	configFilePath, err := xdg.ConfigFile(defaultSubPath)
+	if err != nil {
+		return nil, err
 	}
-	db := &DatabaseCfg{
-		User:     "root",
-		Password: "password",
-		Host:     "127.0.0.1",
-		Port:     3306,
-		Name:     "habbgo",
+
+	// create the file on disk
+	f, err := os.Create(configFilePath)
+	if err != nil {
+		return nil, err
 	}
+	defer f.Close()
+
+	c = defaultConfig()
+	bz, err := yaml.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// write the default config to that location
+	if _, err = f.Write(bz); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// defaultConfig returns a default configuration struct to be marshaled to disk
+func defaultConfig() *Config {
 	return &Config{
-		Server: server,
-		DB:     db,
+		ServerHost:        "127.0.0.1",
+		ServerPort:        11235,
+		MaxConnsPerPlayer: 2,
+		Debug:             true,
+		DBUser:            "postgres",
+		DBPassword:        "password",
+		DBHost:            "127.0.0.1",
+		DBPort:            5432,
+		DBName:            "habbgo",
+		DBDriver:          "postgres",
+		DBSSLMode:         "disable",
 	}
 }

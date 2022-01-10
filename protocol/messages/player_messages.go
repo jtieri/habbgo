@@ -1,4 +1,4 @@
-package composers
+package messages
 
 import (
 	"strconv"
@@ -7,7 +7,7 @@ import (
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
-func ComposeUserObj(p *player.Player) *packets.OutgoingPacket {
+func USEROBJ(p *player.Player) *packets.OutgoingPacket {
 	packet := packets.NewOutgoing(5) // Base64 Header @E
 
 	packet.WriteString(strconv.Itoa(p.Details.Id))
@@ -23,13 +23,13 @@ func ComposeUserObj(p *player.Player) *packets.OutgoingPacket {
 	return packet
 }
 
-func ComposeCreditBalance(credits int) *packets.OutgoingPacket {
+func CREDITBALANCE(credits int) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(6) // Base64 Header @F
 	p.WriteString(strconv.Itoa(credits) + ".0")
 	return p
 }
 
-func ComposeAvailableBadges(p *player.Player) *packets.OutgoingPacket {
+func AVAILABLEBADGES(p *player.Player) *packets.OutgoingPacket {
 	packet := packets.NewOutgoing(229) // Base64 Header
 
 	packet.WriteInt(len(p.Details.Badges))
@@ -48,13 +48,13 @@ func ComposeAvailableBadges(p *player.Player) *packets.OutgoingPacket {
 	return packet
 }
 
-func ComposeSoundSetting(ss int) *packets.OutgoingPacket {
+func SOUNDSETTING(ss int) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(308) // Base 64 Header Dt
 	p.WriteInt(ss)
 	return p
 }
 
-func ComposeLatency(l int) *packets.OutgoingPacket {
+func Latency(l int) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(354) // Base 64 Header Eb
 	p.WriteInt(l)
 	return p

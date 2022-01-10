@@ -1,12 +1,14 @@
 package player
 
 import (
+	"database/sql"
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
 type Player struct {
-	Session Session
-	Details *Details
+	Session  Session
+	Details  *Details
+	Database *sql.DB
 }
 
 type Details struct {
@@ -29,17 +31,18 @@ type Details struct {
 
 type Session interface {
 	Listen()
-	Send(packet *packets.OutgoingPacket)
+	Send(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket)
 	Queue(packet *packets.OutgoingPacket)
-	Flush(packet *packets.OutgoingPacket)
+	Flush(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket)
 	Address() string
-	GetPacketHandler(headerId int) (func(*Player, *packets.IncomingPacket), bool)
+	GetPacketCommand(headerId int) (func(*Player, *packets.IncomingPacket), bool)
 	Close()
 }
 
-func New(session Session) *Player {
+func New(session Session, database *sql.DB) *Player {
 	return &Player{
-		Session: session,
-		Details: &Details{},
+		Session:  session,
+		Database: database,
+		Details:  &Details{},
 	}
 }

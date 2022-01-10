@@ -1,9 +1,9 @@
-# HabbGo
+# habbgo
 
 An emulation of Habbo Hotel as it was in the early to mid 2000's when its client was made in Macromedia's Director
 & powered in the web by the Shockwave plugin (RIP)
 
-HabbGo is extremely experimental and is a project I started when I was in college but never finished. I will be 
+habbgo is extremely experimental and is a project I started when I was in college but never finished. I will be 
 reworking the project and breathing some new life into it over time.
 
 # Goals

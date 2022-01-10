@@ -1,10 +1,10 @@
-package handlers
+package commands
 
 import (
 	"github.com/jtieri/habbgo/game/navigator"
 	"github.com/jtieri/habbgo/game/player"
 	"github.com/jtieri/habbgo/game/room"
-	"github.com/jtieri/habbgo/protocol/composers"
+	"github.com/jtieri/habbgo/protocol/messages"
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
@@ -45,7 +45,7 @@ func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 		// TODO finish private room logic
 	}
 
-	// TODO sort rooms by player count before sending NavNodeInfo
+	// TODO sort rooms by player count before sending NAVNODEINFO
 
-	player.Session.Send(composers.ComposeNavNodeInfo(player, category, nodeMask, subCategories, rooms, currentVisitors, maxVisitors))
+	player.Session.Send(player.Details.Username, messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, nodeMask, subCategories, rooms, currentVisitors, maxVisitors))
 }

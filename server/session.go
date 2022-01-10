@@ -3,18 +3,19 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"github.com/jtieri/habbgo/app"
-	"github.com/jtieri/habbgo/game/player"
-	logger "github.com/jtieri/habbgo/log"
-	"github.com/jtieri/habbgo/protocol/composers"
-	"github.com/jtieri/habbgo/protocol/encoding"
-	packets2 "github.com/jtieri/habbgo/protocol/packets"
 	"log"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/jtieri/habbgo/game/player"
+	logger "github.com/jtieri/habbgo/log"
+	"github.com/jtieri/habbgo/protocol/encoding"
+	"github.com/jtieri/habbgo/protocol/messages"
+	"github.com/jtieri/habbgo/protocol/packets"
 )
 
+// Session represents a players underlying network session and connection to the server
 type Session struct {
 	connection net.Conn
 	buffer     *buffer
@@ -35,26 +36,26 @@ func NewSession(conn net.Conn, server *Server) *Session {
 		buffer:     &buffer{mux: sync.Mutex{}, buff: bufio.NewWriter(conn)},
 		active:     true,
 		server:     server,
-		router:     RegisterHandlers(),
+		router:     RegisterCommands(),
 	}
 }
 
 // Listen starts listening for incoming data from a Session and handles it appropriately.
 func (session *Session) Listen() {
-	p := player.New(session)
+	p := player.New(session, session.server.database)
 	reader := bufio.NewReader(session.connection)
 
-	session.Send(composers.ComposeHello()) // Send packet with Base64 header @@ to initialize connection with client.
+	session.Send(session.Address(), messages.HELLO, messages.HELLO()) // Send packet with Base64 header @@ to initialize connection with client.
 
 	// Listen for incoming packets from a players session
 	for {
 		// Attempt to read three bytes; client->server packets in FUSEv0.2.0 begin with 3 byte Base64 encoded length.
 		encodedLen := make([]byte, 3)
+
 		for i := 0; i < 3; i++ {
 			b, err := reader.ReadByte()
-
 			if err != nil {
-				// TODO handle errors parsing packets
+				log.Printf("There was an error while reading from %s's buffer. Err: %v \n", session.Address(), err)
 				session.Close()
 				return
 			}
@@ -65,8 +66,14 @@ func (session *Session) Listen() {
 		// Check if data is junk before handling
 		rawPacket := make([]byte, length)
 		bytesRead, err := reader.Read(rawPacket)
-		if length == 0 || err != nil || bytesRead < length {
-			log.Println("Junk packet received.") // TODO handle logging junk packets
+		if err != nil {
+			log.Printf("There was an error while reading from %s's buffer. Err: %v \n", session.Address(), err)
+			continue
+		} else if length == 0 {
+			log.Println("Junk packet received, packet length is 0")
+			continue
+		} else if bytesRead < length {
+			log.Printf("Packet length mismatch. Expected {%d bytes} but received {%d bytes} \n", length, bytesRead)
 			continue
 		}
 
@@ -77,14 +84,42 @@ func (session *Session) Listen() {
 			rawHeader[i], _ = payload.ReadByte()
 		}
 
-		packet := packets2.NewIncoming(rawHeader, payload)
+		packet := packets.NewIncoming(rawHeader, payload)
 
-		go Handle(p, packet) // Handle packets coming in from p's Session
+		// Handle packets coming in from p's Session
+		go Handle(p, packet, session.server.config.Debug)
 	}
 }
 
-// Send finalizes an outgoing packet with 0x01 and then attempts to write and flush the packet to a Session's buffer.
-func (session *Session) Send(packet *packets2.OutgoingPacket) {
+// Handle attempts to handle an incoming packet from a Players Session if it's registered in the Router
+func Handle(p *player.Player, packet *packets.IncomingPacket, debug bool) {
+	handler, found := p.Session.GetPacketCommand(packet.HeaderId)
+
+	if found {
+		if debug {
+			// Check if the incoming packet is a handshake packet.
+			// If the user is still logging in we don't have their username for logging so we use
+			// their IP address for logging until handshake is complete
+			// TODO this is kinda ugly, maybe remove this if logging is refactored
+			switch packet.HeaderId {
+			case 206, 202, 5, 6, 181, 4:
+				logger.LogIncomingPacket(p.Session.Address(), handler, packet)
+			default:
+				logger.LogIncomingPacket(p.Details.Username, handler, packet)
+			}
+		}
+		handler(p, packet)
+	} else {
+		if debug {
+			logger.LogUnknownPacket(p.Details.Username, packet)
+		}
+	}
+
+}
+
+// Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer
+// before flushing the buffer.
+func (session *Session) Send(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -99,13 +134,13 @@ func (session *Session) Send(packet *packets2.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if app.Habbgo().Config.Server.Debug {
-		logger.LogOutgoingPacket(session.Address(), packet)
+	if session.server.config.Debug {
+		logger.LogOutgoingPacket(playerIdentifier, caller, packet)
 	}
 }
 
-// Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
-func (session *Session) Queue(packet *packets2.OutgoingPacket) {
+// Queue finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
+func (session *Session) Queue(packet *packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
@@ -116,8 +151,8 @@ func (session *Session) Queue(packet *packets2.OutgoingPacket) {
 	}
 }
 
-// Flush Send finalizes an outgoing packet with 0x01 and then attempts flush the packet to a Sessions's buffer.
-func (session *Session) Flush(packet *packets2.OutgoingPacket) {
+// Flush attempts flush the packet to a Session's buffer.
+func (session *Session) Flush(playerIdentifier string, caller interface{}, packet *packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
@@ -126,22 +161,29 @@ func (session *Session) Flush(packet *packets2.OutgoingPacket) {
 		log.Printf("Error sending packet %v to session %v \n %v ", packet.Header, session.Address(), err)
 	}
 
-	if app.Habbgo().Config.Server.Debug {
-		logger.LogOutgoingPacket(session.Address(), packet)
+	if session.server.config.Debug {
+		logger.LogOutgoingPacket(playerIdentifier, caller, packet)
 	}
 }
 
-func (session *Session) GetPacketHandler(headerId int) (func(*player.Player, *packets2.IncomingPacket), bool) {
-	return session.router.GetHandler(headerId)
+// GetPacketCommand attempts to retrieve a registered Command from the Router
+func (session *Session) GetPacketCommand(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
+	return session.router.GetCommand(headerId)
 }
 
+// Address returns the IP address from a Session's connection
+// Splits the address (e.g. 127.0.0.1:1234) and returns the IP part without the port
 func (session *Session) Address() string {
-	return strings.Split(session.connection.RemoteAddr().String(), ":")[0] // split ip:port at : and return ip part
+	//
+	return strings.Split(session.connection.RemoteAddr().String(), ":")[0]
 }
 
 // Close disconnects a Session from the server.
 func (session *Session) Close() {
-	log.Printf("Closing session for address: %v ", session.Address())
+	if session.server.config.Debug {
+		log.Printf("Closing session for address: %v ", session.Address())
+	}
+
 	session.server.RemoveSession(session)
 	session.server = nil
 	session.buffer = nil
