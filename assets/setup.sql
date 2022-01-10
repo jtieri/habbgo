@@ -1,6 +1,12 @@
 CREATE TYPE sex AS ENUM ('F', 'M');
 CREATE TYPE room_access AS ENUM ('open', 'password', 'closed');
 
+CREATE TABLE IF NOT EXISTS player_ranks (
+    id SERIAL,
+    name TEXT,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS players (
     id SERIAL,
     username VARCHAR(16) NOT NULL UNIQUE,
@@ -15,11 +21,13 @@ CREATE TABLE IF NOT EXISTS players (
     tickets INT NOT NULL DEFAULT 0,
     motto TEXT NOT NULL DEFAULT 'Project habbgo',
     console_motto TEXT NOT NULL DEFAULT 'habbgo rocks!',
+    rank INT NOT NULL DEFAULT 1,
     birthday DATE NOT NULL,
     email TEXT NOT NULL,
     sound_enabled BOOL NOT NULL DEFAULT true,
     created_on TIMESTAMP NOT NULL DEFAULT current_timestamp,
     last_online TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    FOREIGN KEY (rank) REFERENCES player_ranks(id),
     PRIMARY KEY (id)
 );
 
@@ -87,6 +95,17 @@ CREATE TABLE IF NOT EXISTS rooms (
     FOREIGN KEY (model_id) REFERENCES room_models(id) ON DELETE CASCADE,
     PRIMARY KEY (id)
 );
+
+INSERT INTO player_ranks (id, name)
+VALUES (0, 'No Rank'),
+       (1, 'Normal'),
+       (2, 'Community Manager'),
+       (3, 'Guide'),
+       (4, 'Hobba'),
+       (5, 'Super Hobba'),
+       (6, 'Moderator'),
+       (7, 'Administrator');
+
 
 INSERT INTO players (id, username, password_hash, password_salt, birthday, email)
 VALUES (0, 'Staff', '#WSECASDFAR$W', 'asdfashflskdjhfh', '2001-01-01', 'staff@habbgo.com');
