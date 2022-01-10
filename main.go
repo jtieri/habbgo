@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jtieri/habbgo/config"
+	"github.com/jtieri/habbgo/game/navigator"
+	"github.com/jtieri/habbgo/game/room"
 	"github.com/jtieri/habbgo/server"
 	_ "github.com/lib/pq"
 	"log"
@@ -32,6 +34,14 @@ func main() {
 	}
 	defer db.Close()
 	log.Printf("Successfully connected to database %v at %v:%v ", c.DBName, c.DBHost, c.DBPort)
+
+	log.Println("Preparing the in game services...")
+	navigatorService := navigator.NavigatorService()
+	navigatorService.SetDBCon(db)
+	navigatorService.BuildNavigator()
+
+	roomService := room.RoomService()
+	roomService.SetDBConn(db)
 
 	log.Println("Starting the game server... ")
 	gameServer := server.New(c, db)
