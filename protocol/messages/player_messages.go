@@ -48,9 +48,9 @@ func AVAILABLEBADGES(p *player.Player) *packets.OutgoingPacket {
 	return packet
 }
 
-func SOUNDSETTING(ss int) *packets.OutgoingPacket {
+func SOUNDSETTING(ss bool) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(308) // Base 64 Header Dt
-	p.WriteInt(ss)
+	p.WriteBool(ss)
 	return p
 }
 

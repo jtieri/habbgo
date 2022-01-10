@@ -3,6 +3,7 @@ package player
 import (
 	"database/sql"
 	"github.com/jtieri/habbgo/protocol/packets"
+	"time"
 )
 
 type Player struct {
@@ -22,11 +23,11 @@ type Details struct {
 	PoolFigure   string
 	Film         int
 	Credits      int
-	LastOnline   string
+	LastOnline   time.Time
 	Badges       []string
 	CurrentBadge string
 	DisplayBadge bool
-	SoundEnabled int
+	SoundEnabled bool
 }
 
 type Session interface {
