@@ -1,35 +1,79 @@
 package room
 
+import "time"
+
 type Room struct {
-	Details *Data
+	Details *Details
 	Model   *Model
-	//Map     *Map
 }
 
-type Data struct {
+type Details struct {
 	Id              int
-	CatId           int
+	CategoryID      int
 	Name            string
-	Desc            string
+	Description     string
 	CCTs            string
 	Wallpaper       int
 	Floor           int
 	Landscape       float32
-	Owner_Id        int
-	Owner_Name      string
+	OwnerId         int
+	OwnerName       string
 	ShowOwner       bool
 	SudoUsers       bool
-	HideRoom        bool
-	AccessType      int
+	Hidden          bool
+	AccessType      Access
 	Password        string
 	CurrentVisitors int
 	MaxVisitors     int
 	Rating          int
 	ChildRooms      []*Room
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+func NewRoom() *Room {
+	return &Room{
+		Details: &Details{},
+		Model:   &Model{},
+	}
+}
+
+type Access int
+
+const (
+	Open Access = iota
+	Closed
+	Password
+)
+
+func (a Access) String() string {
+	switch a {
+	case Open:
+		return "open"
+	case Closed:
+		return "closed"
+	case Password:
+		return "password"
+	default:
+		return "open"
+	}
+}
+
+func AccessType(accessString string) Access {
+	switch accessString {
+	case "open":
+		return Open
+	case "closed":
+		return Closed
+	case "password":
+		return Password
+	default:
+		return Open
+	}
 }
 
 type Model struct {
-	Id            int
+	ID            int
 	Name          string
 	DoorX         int
 	DoorY         int

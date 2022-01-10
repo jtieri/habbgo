@@ -7,7 +7,7 @@ import (
 )
 
 var rs *roomService
-var ronce sync.Once
+var once sync.Once
 
 const PublicRoomOffset = 1000
 
@@ -17,7 +17,7 @@ type roomService struct {
 }
 
 func RoomService() *roomService {
-	ronce.Do(func() {
+	once.Do(func() {
 		rs = &roomService{
 			repo:  nil,
 			rooms: make(map[int]*Room, 50),
@@ -68,23 +68,11 @@ func (rs *roomService) ReplaceRooms(queryRooms []*Room) []*Room {
 	return rooms
 }
 
-func AccessType(accessId int) string {
-	switch accessId {
-	case 1:
-		return "closed"
-	case 2:
-		return "password"
-	default:
-		return "open"
-	}
-}
-
 func (rs *roomService) PublicRoom(room *Room) bool {
-	if room.Details.Owner_Id == 0 {
+	if room.Details.OwnerId == 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func (rs *roomService) PublicName(room *Room) string {

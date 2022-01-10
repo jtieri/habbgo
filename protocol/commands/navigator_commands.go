@@ -11,13 +11,13 @@ import (
 func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 	roomService := room.RoomService()
 
-	nodeMask := packet.ReadInt() == 1
+	hideFullRooms := packet.ReadInt() == 1
 	catId := packet.ReadInt()
 
 	if catId >= room.PublicRoomOffset {
 		r := roomService.RoomById(catId - room.PublicRoomOffset)
 		if r != nil {
-			catId = r.Details.CatId
+			catId = r.Details.CategoryID
 		}
 	}
 
@@ -36,16 +36,37 @@ func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 
 	var rooms []*room.Room
 	if category.IsPublic {
-		for _, room := range roomService.ReplaceRooms(roomService.RoomsByPlayerId(0)) {
-			if room.Details.CatId == category.ID && (!nodeMask) && room.Details.CurrentVisitors < room.Details.MaxVisitors {
-				rooms = append(rooms, room)
+		for _, r := range roomService.ReplaceRooms(roomService.RoomsByPlayerId(0)) {
+			if r.Details.CategoryID == category.ID && (!hideFullRooms) && r.Details.CurrentVisitors < r.Details.MaxVisitors {
+				// if room is hidden or category id is not equal to the category id we are working with currently continue
+				if r.Details.Hidden || r.Details.CategoryID != category.ID {
+					continue
+				}
+
+				// if we are hiding full rooms in the navigator and the room is full continue
+				if hideFullRooms && r.Details.CurrentVisitors >= r.Details.MaxVisitors {
+					continue
+				}
+
+				rooms = append(rooms, r)
 			}
 		}
 	} else {
 		// TODO finish private room logic
 	}
 
+	//// ----------
+	//fmt.Println("--------------------")
+	//fmt.Println(category.Name)
+	//for _, c := range subCategories {
+	//	fmt.Println(c.Name)
+	//}
+	//fmt.Println("--------------------")
+	//for _, r := range rooms {
+	//	fmt.Println(r.Details.Name)
+	//}
+
 	// TODO sort rooms by player count before sending NAVNODEINFO
 
-	player.Session.Send(player.Details.Username, messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, nodeMask, subCategories, rooms, currentVisitors, maxVisitors))
+	player.Session.Send(player.Details.Username, messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, hideFullRooms, subCategories, rooms, currentVisitors, maxVisitors))
 }

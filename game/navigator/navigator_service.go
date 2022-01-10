@@ -51,12 +51,12 @@ func (ns *navService) CategoryById(id int) *Category {
 }
 
 // CategoriesByParentId retrieves a slice of sub-categories given the int parameter pid and returns it if there is a match.
-func (ns *navService) CategoriesByParentId(pid int) []*Category {
-	var categories []*Category
+func (ns *navService) CategoriesByParentId(pid int) []Category {
+	var categories []Category
 
 	for _, cat := range ns.nav.Categories {
 		if cat.ParentID == pid {
-			categories = append(categories, &cat)
+			categories = append(categories, cat)
 		}
 	}
 
@@ -67,7 +67,7 @@ func CurrentVisitors(cat *Category) int {
 	visitors := 0
 
 	for _, r := range room.RoomService().Rooms() {
-		if r.Details.CatId == cat.ID {
+		if r.Details.CategoryID == cat.ID {
 			visitors += r.Details.CurrentVisitors
 		}
 	}
@@ -79,7 +79,7 @@ func MaxVisitors(cat *Category) int {
 	visitors := 0
 
 	for _, r := range room.RoomService().Rooms() {
-		if r.Details.CatId == cat.ID {
+		if r.Details.CategoryID == cat.ID {
 			visitors += r.Details.MaxVisitors
 		}
 	}
