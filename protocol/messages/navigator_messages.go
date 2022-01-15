@@ -1,7 +1,6 @@
 package messages
 
 import (
-	"fmt"
 	"github.com/jtieri/habbgo/game/navigator"
 	"github.com/jtieri/habbgo/game/player"
 	"github.com/jtieri/habbgo/game/room"
@@ -14,7 +13,7 @@ func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullR
 	rooms []*room.Room, currentVisitors int, maxVisitors int) *packets.OutgoingPacket {
 	p := packets.NewOutgoing(220) // Base64 Header C\
 
-	p.WriteBool(hideFullRooms) // hideCategory
+	p.WriteBool(hideFullRooms)
 	p.WriteInt(parentCat.ID)
 
 	if parentCat.IsPublic {
@@ -33,7 +32,8 @@ func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullR
 	}
 
 	for _, r := range rooms {
-		if r.Details.OwnerId == 0 { // if r is public
+		// if room is public
+		if r.Details.OwnerId == 0 {
 			desc := r.Details.Description
 
 			var door int
@@ -43,20 +43,20 @@ func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullR
 				door, _ = strconv.Atoi(data[1])
 			}
 
-			p.WriteInt(r.Details.Id + room.PublicRoomOffset) // writeInt roomId
-			p.WriteInt(1)                                    // writeInt 1
-			p.WriteString(r.Details.Name)                    // writeString roomName
-			p.WriteInt(r.Details.CurrentVisitors)            // writeInt currentVisitors
-			p.WriteInt(r.Details.MaxVisitors)                // writeInt maxVisitors
-			p.WriteInt(r.Details.CategoryID)                 // writeInt catId
-			p.WriteString(desc)                              // writeString roomDesc
-			p.WriteInt(r.Details.Id)                         // writeInt roomId
-			p.WriteInt(door)                                 // writeInt door
-			p.WriteString(r.Details.CCTs)                    // writeString roomCCTs
-			p.WriteInt(0)                                    // writeInt 0
-			p.WriteInt(1)                                    // writeInt 1
+			p.WriteInt(r.Details.ID + room.PublicRoomOffset)
+			p.WriteInt(1)
+			p.WriteString(r.Details.Name)
+			p.WriteInt(r.Details.CurrentVisitors)
+			p.WriteInt(r.Details.MaxVisitors)
+			p.WriteInt(r.Details.CategoryID)
+			p.WriteString(desc)
+			p.WriteInt(r.Details.ID)
+			p.WriteInt(door)
+			p.WriteString(r.Details.CCTs)
+			p.WriteInt(0)
+			p.WriteInt(1)
 		} else {
-			p.WriteInt(r.Details.Id)
+			p.WriteInt(r.Details.ID)
 			p.WriteString(r.Details.Name)
 
 			// TODO check that player is owner of r, that r is showing owner name, or that player has right SEE_ALL_ROOMOWNERS
@@ -78,13 +78,11 @@ func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullR
 		if subcat.MinRankAccess > player.Details.PlayerRank {
 			continue
 		}
-
-		fmt.Println(subcat.Name)
 		p.WriteInt(subcat.ID)
 		p.WriteInt(0)
 		p.WriteString(subcat.Name)
-		p.WriteInt(navigator.CurrentVisitors(&subcat)) // writeInt currentVisitors
-		p.WriteInt(navigator.MaxVisitors(&subcat))     // writeInt maxVisitors
+		p.WriteInt(navigator.CurrentVisitors(&subcat))
+		p.WriteInt(navigator.MaxVisitors(&subcat))
 		p.WriteInt(parentCat.ID)
 	}
 

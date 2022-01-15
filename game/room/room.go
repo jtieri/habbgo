@@ -8,7 +8,7 @@ type Room struct {
 }
 
 type Details struct {
-	Id              int
+	ID              int
 	CategoryID      int
 	Name            string
 	Description     string
@@ -29,6 +29,24 @@ type Details struct {
 	ChildRooms      []*Room
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+}
+
+type Model struct {
+	ID            int
+	Name          string
+	DoorX         int
+	DoorY         int
+	DoorZ         float32
+	DoorDirection int
+	Heightmap     string
+}
+
+type Map struct {
+	mapping [][]*Tile
+}
+
+type Tile struct {
+	// May incorporate this into pathfinding later down the line
 }
 
 func NewRoom() *Room {
@@ -70,22 +88,4 @@ func AccessType(accessString string) Access {
 	default:
 		return Open
 	}
-}
-
-type Model struct {
-	ID            int
-	Name          string
-	DoorX         int
-	DoorY         int
-	DoorZ         float32
-	DoorDirection int
-	Heightmap     string
-}
-
-type Map struct {
-	mapping [][]*Tile
-}
-
-type Tile struct {
-	// May incorporate this into pathfinding later down the line
 }

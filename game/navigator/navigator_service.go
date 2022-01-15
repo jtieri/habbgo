@@ -7,7 +7,7 @@ import (
 )
 
 var ns *navService
-var nonce sync.Once
+var once sync.Once
 
 type navService struct {
 	repo *NavRepo
@@ -18,7 +18,7 @@ type navService struct {
 // NavigatorService will initialize the single instance of navService if it is the first time it is called and then it
 // will return the instance.
 func NavigatorService() *navService {
-	nonce.Do(func() {
+	once.Do(func() {
 		ns = &navService{
 			repo: nil,
 			nav:  new(Navigator),

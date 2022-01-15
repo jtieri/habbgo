@@ -22,6 +22,7 @@ func RegisterCommands() (r *Router) {
 	r.RegisterRegistrationCommands()
 	r.RegisterPlayerCommands()
 	r.RegisterNavigatorCommands()
+	r.RegisterRoomCommands()
 
 	return
 }
@@ -56,7 +57,7 @@ func (r *Router) RegisterPlayerCommands() {
 }
 
 func (r *Router) RegisterNavigatorCommands() {
-	r.RegisteredCommands[150] = commands.Navigate
+	r.RegisteredCommands[150] = commands.NAVIGATE
 	// 151: GETUSERFLATCATS
 	// 21: GETFLATINFO
 	// 23: DELETEFLAT
@@ -74,4 +75,8 @@ func (r *Router) RegisterNavigatorCommands() {
 	// 18: GETFVRF
 	// 19: ADD_FAVORITE_ROOM
 	// 20: DEL_FAVORITE_ROOM
+}
+
+func (r *Router) RegisterRoomCommands() {
+	r.RegisteredCommands[182] = commands.GETINTERST
 }
