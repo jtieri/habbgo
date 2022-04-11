@@ -6,15 +6,19 @@ import (
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
+// Router maps incoming packet header ID's to their appropriate Command handlers.
 type Router struct {
 	RegisteredCommands map[int]func(*player.Player, *packets.IncomingPacket)
 }
 
+// GetCommand returns the Command handler function associated with the specified headerId,
+// if there is no registered Command with that headerId false is returned.
 func (r *Router) GetCommand(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
 	h, found := r.RegisteredCommands[headerId]
 	return h, found
 }
 
+// RegisterCommands initializes the Router and registers the Command handler functions.
 func RegisterCommands() (r *Router) {
 	r = &Router{RegisteredCommands: make(map[int]func(p *player.Player, packet *packets.IncomingPacket))}
 
@@ -26,6 +30,7 @@ func RegisterCommands() (r *Router) {
 	return
 }
 
+// RegisterHandshakeCommands registers the handshake related Command handlers.
 func (r *Router) RegisterHandshakeCommands() {
 	r.RegisteredCommands[206] = commands.INIT_CRYPTO
 	r.RegisteredCommands[202] = commands.GENERATEKEY  // older clients
@@ -38,6 +43,7 @@ func (r *Router) RegisterHandshakeCommands() {
 	r.RegisteredCommands[207] = commands.SECRETKEY
 }
 
+// RegisterRegistrationCommands registers the registration related Command handlers.
 func (r *Router) RegisterRegistrationCommands() {
 	r.RegisteredCommands[9] = commands.GETAVAILABLESETS
 	r.RegisteredCommands[49] = commands.GDATE
@@ -47,6 +53,7 @@ func (r *Router) RegisterRegistrationCommands() {
 	r.RegisteredCommands[43] = commands.REGISTER
 }
 
+// RegisterPlayerCommands registers the player related Command handlers.
 func (r *Router) RegisterPlayerCommands() {
 	r.RegisteredCommands[7] = commands.GET_INFO
 	r.RegisteredCommands[8] = commands.GET_CREDITS
@@ -55,6 +62,7 @@ func (r *Router) RegisterPlayerCommands() {
 	r.RegisteredCommands[315] = commands.TestLatency
 }
 
+// RegisterNavigatorCommands registers the Navigator related Command handlers.
 func (r *Router) RegisterNavigatorCommands() {
 	r.RegisteredCommands[150] = commands.Navigate
 	// 151: GETUSERFLATCATS

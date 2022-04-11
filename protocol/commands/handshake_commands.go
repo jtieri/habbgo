@@ -7,17 +7,17 @@ import (
 )
 
 func INIT_CRYPTO(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Session.Address(), messages.CRYPTOPARAMETERS, messages.CRYPTOPARAMETERS())
+	player.Session.Send(messages.CRYPTOPARAMETERS, messages.CRYPTOPARAMETERS())
 }
 
 func GENERATEKEY(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Session.Address(), messages.AVAILABLESETS, messages.AVAILABLESETS())
-	player.Session.Send(player.Session.Address(), messages.ENDCRYPTO, messages.ENDCRYPTO())
+	player.Session.Send(messages.AVAILABLESETS, messages.AVAILABLESETS())
+	player.Session.Send(messages.ENDCRYPTO, messages.ENDCRYPTO())
 	//player.Session.Send(composers.SECRETKEY())
 }
 
 func GET_SESSION_PARAMETERS(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Session.Address(), messages.SESSIONPARAMETERS, messages.SESSIONPARAMETERS())
+	player.Session.Send(messages.SESSIONPARAMETERS, messages.SESSIONPARAMETERS())
 }
 
 func VERSIONCHECK(player *player.Player, packet *packets.IncomingPacket) {
@@ -29,7 +29,7 @@ func UNIQUEID(player *player.Player, packet *packets.IncomingPacket) {
 }
 
 func SECRETKEY(player *player.Player, packets *packets.IncomingPacket) {
-	player.Session.Send(player.Session.Address(), messages.ENDCRYPTO, messages.ENDCRYPTO())
+	player.Session.Send(messages.ENDCRYPTO, messages.ENDCRYPTO())
 }
 
 func SSO(p *player.Player, packet *packets.IncomingPacket) {
@@ -49,8 +49,8 @@ func TRY_LOGIN(p *player.Player, packet *packets.IncomingPacket) {
 
 	if player.LoginDB(p, username, password) {
 		p.Login()
-		p.Session.Send(p.Session.Address(), messages.LOGINOK, messages.LOGINOK())
+		p.Session.Send(messages.LOGINOK, messages.LOGINOK())
 	} else {
-		p.Session.Send(p.Session.Address(), messages.LOCALISED_ERROR, messages.LOCALISED_ERROR("Invalid Login Credentials."))
+		p.Session.Send(messages.LOCALISED_ERROR, messages.LOCALISED_ERROR("Invalid Login Credentials."))
 	}
 }

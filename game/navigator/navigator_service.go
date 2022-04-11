@@ -2,45 +2,37 @@ package navigator
 
 import (
 	"database/sql"
+
 	"github.com/jtieri/habbgo/game/room"
-	"sync"
+	"go.uber.org/zap"
 )
 
-var ns *navService
-var nonce sync.Once
-
-type navService struct {
+type NavService struct {
 	repo *NavRepo
 	nav  *Navigator
-	mux  *sync.Mutex
+	log  *zap.Logger
 }
 
-// NavigatorService will initialize the single instance of navService if it is the first time it is called and then it
-// will return the instance.
-func NavigatorService() *navService {
-	nonce.Do(func() {
-		ns = &navService{
-			repo: nil,
-			nav:  new(Navigator),
-			mux:  &sync.Mutex{},
-		}
-	})
-
-	return ns
+func NewNavigatorService(log *zap.Logger, db *sql.DB) *NavService {
+	return &NavService{
+		repo: NewNavRepo(db),
+		nav:  new(Navigator),
+		log:  log,
+	}
 }
 
-// SetDBCon is called when a NavService struct is allocated initially so that it has access to the applications db.
-func (ns *navService) SetDBCon(db *sql.DB) {
+// SetDBConnection is called when a NavService struct is allocated initially so that it has access to the applications db.
+func (ns *NavService) SetDBConnection(db *sql.DB) {
 	ns.repo = NewNavRepo(db)
 }
 
-// BuildNavigator retrieves the room categories from the database and builds the in-game Navigator with them.
-func (ns *navService) BuildNavigator() {
+// Build retrieves the room categories from the database and builds the in-game Navigator with them.
+func (ns *NavService) Build() {
 	ns.nav.Categories = ns.repo.Categories()
 }
 
 // CategoryById retrieves a navigator category given the int parameter id and returns it if there is a match.
-func (ns *navService) CategoryById(id int) *Category {
+func (ns *NavService) CategoryById(id int) *Category {
 	for _, cat := range ns.nav.Categories {
 		if cat.ID == id {
 			return &cat
@@ -51,7 +43,7 @@ func (ns *navService) CategoryById(id int) *Category {
 }
 
 // CategoriesByParentId retrieves a slice of sub-categories given the int parameter pid and returns it if there is a match.
-func (ns *navService) CategoriesByParentId(pid int) []Category {
+func (ns *NavService) CategoriesByParentId(pid int) []Category {
 	var categories []Category
 
 	for _, cat := range ns.nav.Categories {
@@ -63,10 +55,10 @@ func (ns *navService) CategoriesByParentId(pid int) []Category {
 	return categories
 }
 
-func CurrentVisitors(cat *Category) int {
+func CurrentVisitors(cat *Category, rooms []*room.Room) int {
 	visitors := 0
 
-	for _, r := range room.RoomService().Rooms() {
+	for _, r := range rooms {
 		if r.Details.CategoryID == cat.ID {
 			visitors += r.Details.CurrentVisitors
 		}
@@ -75,10 +67,10 @@ func CurrentVisitors(cat *Category) int {
 	return visitors
 }
 
-func MaxVisitors(cat *Category) int {
+func MaxVisitors(cat *Category, rooms []*room.Room) int {
 	visitors := 0
 
-	for _, r := range room.RoomService().Rooms() {
+	for _, r := range rooms {
 		if r.Details.CategoryID == cat.ID {
 			visitors += r.Details.MaxVisitors
 		}

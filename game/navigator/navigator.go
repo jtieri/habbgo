@@ -1,6 +1,8 @@
 package navigator
 
-import "github.com/jtieri/habbgo/game/player"
+import (
+	"github.com/jtieri/habbgo/game/ranks"
+)
 
 type Navigator struct {
 	Categories []Category
@@ -13,6 +15,6 @@ type Category struct {
 	IsNode         bool
 	IsPublic       bool
 	IsTrading      bool
-	MinRankAccess  player.Rank
+	MinRankAccess  ranks.Rank
 	MinRankSetFlat int
 }

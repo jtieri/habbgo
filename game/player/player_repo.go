@@ -1,8 +1,10 @@
 package player
 
 import (
-	"github.com/jtieri/habbgo/crypto"
 	"log"
+
+	"github.com/jtieri/habbgo/crypto"
+	"go.uber.org/zap"
 )
 
 func Register(player *Player, username, figure, gender, email, birthday, createdAt, password string, salt []byte) error {
@@ -32,7 +34,10 @@ func LoginDB(player *Player, username string, password string) bool {
 		Scan(&psswrdHash, &psswrdSalt, &uname)
 
 	if err != nil {
-		player.LogErr(err)
+		player.log.Warn("Failed to query database during login",
+			zap.String("username", username),
+			zap.Error(err),
+		)
 	}
 
 	if crypto.HashPassword(password, psswrdSalt) == psswrdHash {

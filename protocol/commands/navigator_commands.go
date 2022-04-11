@@ -9,7 +9,7 @@ import (
 )
 
 func Navigate(player *player.Player, packet *packets.IncomingPacket) {
-	roomService := room.RoomService()
+	roomService := player.Services.RoomService()
 
 	hideFullRooms := packet.ReadInt() == 1
 	catId := packet.ReadInt()
@@ -21,18 +21,19 @@ func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 		}
 	}
 
-	category := navigator.NavigatorService().CategoryById(catId)
+	category := player.Services.NavigatorService().CategoryById(catId)
 
 	// TODO also check that access rank isnt higher than players rank
 	if category == nil {
 		return
 	}
 
-	subCategories := navigator.NavigatorService().CategoriesByParentId(category.ID)
+	subCategories := player.Services.NavigatorService().CategoriesByParentId(category.ID)
 	// sort categories by player count
 
-	currentVisitors := navigator.CurrentVisitors(category)
-	maxVisitors := navigator.MaxVisitors(category)
+	r := player.Services.RoomService().Rooms()
+	currentVisitors := navigator.CurrentVisitors(category, r)
+	maxVisitors := navigator.MaxVisitors(category, r)
 
 	var rooms []*room.Room
 	if category.IsPublic {
@@ -68,5 +69,5 @@ func Navigate(player *player.Player, packet *packets.IncomingPacket) {
 
 	// TODO sort rooms by player count before sending NAVNODEINFO
 
-	player.Session.Send(player.Details.Username, messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, hideFullRooms, subCategories, rooms, currentVisitors, maxVisitors))
+	player.Session.Send(messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, hideFullRooms, subCategories, rooms, currentVisitors, maxVisitors))
 }

@@ -2,12 +2,13 @@ package messages
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/jtieri/habbgo/game/navigator"
 	"github.com/jtieri/habbgo/game/player"
 	"github.com/jtieri/habbgo/game/room"
 	"github.com/jtieri/habbgo/protocol/packets"
-	"strconv"
-	"strings"
 )
 
 func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullRooms bool, subcats []navigator.Category,
@@ -79,12 +80,13 @@ func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullR
 			continue
 		}
 
+		r := player.Services.RoomService().Rooms()
 		fmt.Println(subcat.Name)
 		p.WriteInt(subcat.ID)
 		p.WriteInt(0)
 		p.WriteString(subcat.Name)
-		p.WriteInt(navigator.CurrentVisitors(&subcat)) // writeInt currentVisitors
-		p.WriteInt(navigator.MaxVisitors(&subcat))     // writeInt maxVisitors
+		p.WriteInt(navigator.CurrentVisitors(&subcat, r)) // writeInt currentVisitors
+		p.WriteInt(navigator.MaxVisitors(&subcat, r))     // writeInt maxVisitors
 		p.WriteInt(parentCat.ID)
 	}
 

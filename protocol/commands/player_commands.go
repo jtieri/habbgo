@@ -7,22 +7,22 @@ import (
 )
 
 func GET_INFO(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Details.Username, messages.USEROBJ, messages.USEROBJ(player))
+	player.Session.Send(messages.USEROBJ, messages.USEROBJ(player))
 }
 
 func GET_CREDITS(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Details.Username, messages.CREDITBALANCE, messages.CREDITBALANCE(player.Details.Credits))
+	player.Session.Send(messages.CREDITBALANCE, messages.CREDITBALANCE(player.Details.Credits))
 }
 
 func GETAVAILABLEBADGES(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Details.Username, messages.AVAILABLESETS, messages.AVAILABLEBADGES(player))
+	player.Session.Send(messages.AVAILABLESETS, messages.AVAILABLEBADGES(player))
 }
 
 func GET_SOUND_SETTING(player *player.Player, packet *packets.IncomingPacket) {
-	player.Session.Send(player.Details.Username, messages.SOUNDSETTING, messages.SOUNDSETTING(player.Details.SoundEnabled))
+	player.Session.Send(messages.SOUNDSETTING, messages.SOUNDSETTING(player.Details.SoundEnabled))
 }
 
 func TestLatency(player *player.Player, packet *packets.IncomingPacket) {
 	l := packet.ReadInt()
-	player.Session.Send(player.Details.Username, messages.Latency, messages.Latency(l))
+	player.Session.Send(messages.Latency, messages.Latency(l))
 }
