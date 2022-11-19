@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	ALLOWEDCHARS          = "1234567890qwertyuiopasdfghjklzxcvbnm_-+=?!@:.,$" // TODO make this a config option
 	OK                    = 0
 	NAMETOOLONG           = 1
 	NAMETOOSHORT          = 2
@@ -27,26 +26,26 @@ const (
 	PASSWORDSIMILARTONAME = 5
 )
 
-func GETAVAILABLESETS(p *player.Player, packet *packets.IncomingPacket) {
+func GETAVAILABLESETS(p player.Player, packet packets.IncomingPacket) {
 	p.Session.Send(messages.AVAILABLESETS, messages.AVAILABLESETS())
 }
 
-func GDATE(p *player.Player, packet *packets.IncomingPacket) {
-	p.Session.Send(messages.DATE, messages.DATE(date.GetCurrentDate()))
+func GDATE(p player.Player, packet packets.IncomingPacket) {
+	p.Session.Send(messages.DATE, messages.DATE(date.CurrentDate()))
 }
 
-func APPROVENAME(p *player.Player, packet *packets.IncomingPacket) {
+func APPROVENAME(p player.Player, packet packets.IncomingPacket) {
 	name := text.Filter(packet.ReadString())
 	p.Session.Send(messages.APPROVENAMEREPLY, messages.APPROVENAMEREPLY(checkName(p, name)))
 }
 
-func APPROVE_PASSWORD(p *player.Player, packet *packets.IncomingPacket) {
+func APPROVE_PASSWORD(p player.Player, packet packets.IncomingPacket) {
 	username := packet.ReadString()
 	password := packet.ReadString()
 	p.Session.Send(messages.PASSWORD_APPROVED, messages.PASSWORD_APPROVED(checkPassword(p, username, password)))
 }
 
-func APPROVEEMAIL(p *player.Player, packet *packets.IncomingPacket) {
+func APPROVEEMAIL(p player.Player, packet packets.IncomingPacket) {
 	email := packet.ReadString()
 
 	if _, err := mail.ParseAddress(email); err != nil {
@@ -56,7 +55,7 @@ func APPROVEEMAIL(p *player.Player, packet *packets.IncomingPacket) {
 	}
 }
 
-func REGISTER(p *player.Player, packet *packets.IncomingPacket) {
+func REGISTER(p player.Player, packet packets.IncomingPacket) {
 	packet.ReadB64()
 	username := packet.ReadString()
 
@@ -79,7 +78,7 @@ func REGISTER(p *player.Player, packet *packets.IncomingPacket) {
 	password := packet.ReadString()
 
 	// hash password before storing in db
-	randSalt := crypto.GenerateRandomSalt(crypto.SALTSIZE)
+	randSalt := crypto.GenerateRandomSalt(crypto.SaltSize)
 	hPsswrd := crypto.HashPassword(password, randSalt)
 
 	// generate date time stamp in UTC with format YYYY-MM-DD T HH-MM-SS
@@ -105,15 +104,15 @@ func REGISTER(p *player.Player, packet *packets.IncomingPacket) {
 }
 
 // checkName takes in a proposed username and returns an integer representing the approval status of the given name
-func checkName(p *player.Player, username string) int {
+func checkName(p player.Player, username string) int {
 	switch {
-	case player.PlayerExists(p, username):
+	case p.Repo.PlayerExists(username):
 		return NAMEALREADYRESERVED
 	case len(username) > 16:
 		return NAMETOOLONG
 	case len(username) < 1:
 		return NAMETOOSHORT
-	case !text.ContainsAllowedChars(strings.ToLower(username), ALLOWEDCHARS) || strings.Contains(username, " "):
+	case !text.ContainsAllowedChars(strings.ToLower(username), text.AllowedCharacters) || strings.Contains(username, " "):
 		return NAMEUNACCEPTABLE
 	case strings.Contains(strings.ToUpper(username), "MOD-"):
 		return NAMEUNACCEPTABLE
@@ -123,15 +122,15 @@ func checkName(p *player.Player, username string) int {
 }
 
 // checkPassword takes in a proposed password and returns an integer representing the approval status of the given password
-func checkPassword(p *player.Player, username, password string) int {
+func checkPassword(p player.Player, username, password string) int {
 	switch {
 	case len(password) < 6:
 		return PASSWORDTOOSHORT // too short
 	case len(password) > 16:
 		return PASSWORDTOOLONG // too long
-	case !text.ContainsAllowedChars(strings.ToLower(password), ALLOWEDCHARS) || strings.Contains(username, " "):
+	case !text.ContainsAllowedChars(strings.ToLower(password), text.AllowedCharacters) || strings.Contains(username, " "):
 		return PASSWORDUNACCEPTABLE // using non-permitted characters
-	case !text.ContainsANumber(password):
+	case !text.ContainsNumber(password):
 		return PASSWORDHASNONUM // password does not contain a number
 	case username == password:
 		return PASSWORDSIMILARTONAME // name and pass too similar

@@ -1,25 +1,52 @@
 package player
 
 import (
+	"container/list"
+	"context"
 	"database/sql"
-	"strings"
 	"time"
 
-	"github.com/jtieri/habbgo/game/navigator"
+	"github.com/jtieri/habbgo/game/pathfinder/position"
 	"github.com/jtieri/habbgo/game/ranks"
-	"github.com/jtieri/habbgo/game/room"
+	"github.com/jtieri/habbgo/game/room/actions"
+	"github.com/jtieri/habbgo/game/types"
 	"github.com/jtieri/habbgo/protocol/packets"
 	"go.uber.org/zap"
 )
 
 type Player struct {
-	Session Session
-	Details *Details
+	Ctx context.Context
 
-	Database *sql.DB
-	Services ServiceManager
+	state    *PlayerState
+	Session  Session
+	Details  *Details
+	Repo     PlayerRepo
+	Services types.ServiceProxies
+	loggedIn bool
 
 	log *zap.Logger
+}
+
+// PlayerState represents a player.Player's state in a room.Room.
+type PlayerState struct {
+	InstanceID int
+	StateType  string // TODO in the future this will be used to distinguish between different types e.g. Players, pets, bots, Items
+
+	RoomID    int
+	ModelName string
+
+	Position     position.Position
+	NextPosition position.Position
+	EndPosition  position.Position
+	Path         list.List
+
+	needsUpdate bool
+	canMove     bool
+	moving      bool
+	inRoom      bool
+	kicked      bool
+
+	Actions map[string]actions.Action
 }
 
 type Details struct {
@@ -42,59 +69,43 @@ type Details struct {
 }
 
 type Session interface {
-	Listen()
-	Send(caller interface{}, packet *packets.OutgoingPacket)
-	Queue(packet *packets.OutgoingPacket)
-	Flush(caller interface{}, packet *packets.OutgoingPacket)
-	Address() string
-	GetPacketCommand(headerId int) (func(*Player, *packets.IncomingPacket), bool)
+	Send(caller interface{}, packet packets.OutgoingPacket)
+	Queue(caller interface{}, packet packets.OutgoingPacket)
+	Flush(caller interface{}, packet packets.OutgoingPacket)
 	Close()
 }
 
-type Service interface {
-	Build()
-}
-
-type ServiceManager interface {
-	RoomService() *room.RoomService
-	PlayerService() *PlayerService
-	NavigatorService() *navigator.NavService
-}
-
-func New(log *zap.Logger, session Session, database *sql.DB, s ServiceManager) *Player {
-	return &Player{
+func New(ctx context.Context, log *zap.Logger, session Session, database *sql.DB, s types.ServiceProxies) Player {
+	return Player{
+		Ctx:      ctx,
+		state:    NewPlayerState(),
 		Session:  session,
-		Database: database,
-		Details:  &Details{},
+		Repo:     NewPlayerRepo(database),
+		Details:  new(Details),
 		Services: s,
+		loggedIn: false,
 		log:      log,
 	}
 }
 
-func PlayerRank(rankString string) ranks.Rank {
-	switch strings.ToLower(rankString) {
-	case "none":
-		return ranks.None
-	case "normal":
-		return ranks.Normal
-	case "community manager":
-		return ranks.CommunityManager
-	case "guide":
-		return ranks.Guide
-	case "hobba":
-		return ranks.Hobba
-	case "super hobba":
-		return ranks.SuperHobba
-	case "moderator":
-		return ranks.Moderator
-	case "administrator":
-		return ranks.Administrator
-	default:
-		return ranks.Normal
+func NewPlayerState() *PlayerState {
+	return &PlayerState{
+		Actions:     make(map[string]actions.Action),
+		inRoom:      false,
+		canMove:     false,
+		needsUpdate: false,
+		kicked:      false,
+		moving:      false,
 	}
 }
 
+func (p *Player) Cleanup() {
+	// TODO finish this
+}
+
 func (p *Player) Login() {
+	p.loggedIn = true
+
 	// Set player logged in & ping ready for latency test
 	// Possibly add player to a list of online players? Health endpoint with server stats?
 	// Save current time to Conn for players last online time
@@ -102,7 +113,7 @@ func (p *Player) Login() {
 	// Check if player is banned & if so send USER_BANNED
 	// Log IP address to Conn
 
-	LoadBadges(p)
+	p.Repo.LoadBadges(p)
 
 	// If Config has alerts enabled, send player ALERT
 
@@ -110,11 +121,43 @@ func (p *Player) Login() {
 }
 
 func (p *Player) Register(username, figure, gender, email, birthday, createdAt, password string, salt []byte) {
-	err := Register(p, username, figure, gender, email, birthday, createdAt, password, salt)
+	err := p.Repo.Register(username, figure, gender, email, birthday, createdAt, password, salt)
 	if err != nil {
 		p.log.Warn("Failed to register player",
 			zap.String("username", username),
 			zap.Error(err),
 		)
 	}
+}
+
+func (p *Player) NeedsUpdate() bool {
+	return p.state.needsUpdate
+}
+
+func (p *Player) SetUpdate(update bool) {
+	p.state.needsUpdate = update
+}
+
+func (p *Player) State() *PlayerState {
+	return p.state
+}
+
+func (p *Player) InRoom() bool {
+	return p.state.inRoom
+}
+
+func (p *Player) SetInRoom(inRoom bool) {
+	p.state.inRoom = inRoom
+}
+
+func (p *Player) SetPosition(pos position.Position) {
+	p.state.Position = pos
+}
+
+func (p *Player) CanMove() bool {
+	return p.state.canMove
+}
+
+func (p *Player) LoggedIn() bool {
+	return p.loggedIn
 }

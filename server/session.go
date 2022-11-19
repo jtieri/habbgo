@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"net"
 	"reflect"
 	"runtime"
@@ -44,10 +45,11 @@ func NewSession(log *zap.Logger, conn net.Conn, server *Server) *Session {
 	}
 }
 
-// Listen starts listening for incoming data from a Session's connection and handles it appropriately as
+// listen starts listening for incoming data from a Session's connection and handles it appropriately as
 // per the FUSEv0.2.0 protocol.
-func (session *Session) Listen() {
+func (session *Session) listen(ctx context.Context) {
 	p := player.New(
+		ctx,
 		session.log.With(),
 		session,
 		session.server.database,
@@ -62,121 +64,186 @@ func (session *Session) Listen() {
 	for {
 		// Attempt to read three bytes,
 		// client->server packets in FUSEv0.2.0 begin with 3 byte Base64 encoded packet length.
-		encodedLen := make([]byte, 3)
-
-		for i := 0; i < 3; i++ {
-			b, err := reader.ReadByte()
-			if err != nil {
-				// If the network connection is closed, it's because the server closed the Session
-				// which means we don't need to log again or call session.Close
-				if strings.Contains(err.Error(), "use of closed network connection") {
-					return
-				}
-
-				session.log.Warn("Error reading encoded packet length from session",
-					zap.String("session_address", session.Address()),
-					zap.Error(err),
-				)
-				session.Close()
+		encodedLen, err := readPacketLength(reader)
+		if err != nil {
+			// If the network connection is closed, it's because the server closed the Session
+			// which means we don't need to log again or call session.Close
+			if strings.Contains(err.Error(), "use of closed network connection") {
 				return
 			}
-			encodedLen[i] = b
-		}
-		packetLen := encoding.DecodeB64(encodedLen)
 
-		// Check if data is junk before handling.
-		rawPacket := make([]byte, packetLen)
-		bytesRead, err := reader.Read(rawPacket)
-		switch {
-		case err != nil:
-			session.log.Warn("Error reading packet data from session",
-				zap.String("session_address", session.Address()),
+			session.log.Error(
+				"Error reading encoded packet length from session",
+				zap.String("session_address", session.address()),
 				zap.Error(err),
 			)
 			session.Close()
 			return
-		case packetLen == 0:
-			session.log.Info("Junk packet received")
+		}
+
+		// Decode packet length & check if data is junk before handling.
+		packetLen := encoding.DecodeB64(encodedLen)
+		if !validate(session, packetLen, reader.Size()) {
+			// R we find junk data in the connections buffer
+			reader.Reset(session.connection)
 			continue
-		case bytesRead < packetLen:
-			session.log.Info("Packet length mismatch",
-				zap.Int("expected_length", packetLen),
-				zap.Int("got_length", bytesRead),
+		}
+
+		// Build a packet object from the remaining bytes
+		packetBz := make([]byte, packetLen)
+
+		if _, err = reader.Read(packetBz); err != nil {
+			session.log.Error(
+				"Error reading packet data from session",
+				zap.String("session_address", session.address()),
+				zap.Error(err),
 			)
-			continue
+			session.Close()
+			return
 		}
 
-		// Get Base64 encoded packet header.
-		payload := bytes.NewBuffer(rawPacket)
-		rawHeader := make([]byte, 2)
-		for i := 0; i < 2; i++ {
-			rawHeader[i], _ = payload.ReadByte()
+		packet, err := packetFromBytes(packetBz)
+		if err != nil {
+			session.log.Error(
+				"Error reading packet data from session",
+				zap.String("session_address", session.address()),
+				zap.Error(err),
+			)
+			session.Close()
+			return
 		}
 
-		packet := packets.NewIncoming(rawHeader, payload)
+		// handle packets coming in from the Player's Session.
+		ps := p.Services.PlayerService().(*player.PlayerServiceProxy)
+		cachedPlayer := ps.GetPlayer(p)
 
-		// Handle packets coming in from the Player's Session.
-		go session.Handle(p, packet)
+		if cachedPlayer.LoggedIn() {
+			go session.handle(cachedPlayer, packet)
+		} else {
+			go session.handle(p, packet)
+		}
 	}
 }
 
-// Handle attempts to handle an incoming packet from a player.Player's Session.
+// packetFromBytes attempts to build a packets.IncomingPacket from a slice of bytes.
+func packetFromBytes(packetBytes []byte) (packets.IncomingPacket, error) {
+	payload := bytes.NewBuffer(packetBytes)
+	rawHeader := make([]byte, 2)
+
+	for i := 0; i < 2; i++ {
+		b, err := payload.ReadByte()
+		if err != nil {
+			return packets.IncomingPacket{}, err
+		}
+		rawHeader[i] = b
+	}
+
+	return packets.NewIncoming(rawHeader, payload), nil
+}
+
+// readPacketLength attempts to read the 3 byte Base64 encoded packet length from the buffered reader.
+func readPacketLength(reader *bufio.Reader) ([]byte, error) {
+	encodedLen := make([]byte, 3)
+
+	for i := 0; i < 3; i++ {
+		b, err := reader.ReadByte()
+		if err != nil {
+			return nil, err
+		}
+		encodedLen[i] = b
+	}
+
+	return encodedLen, nil
+}
+
+// validate checks if an incoming packet is valid.
+// It's argument is a 3 byte Base64 encoded length.
+func validate(session *Session, packetLen, bytesRead int) bool {
+
+	switch {
+	case packetLen == 0:
+		session.log.Info("Junk packet received")
+		return false
+	case bytesRead < packetLen:
+		session.log.Info(
+			"Packet length mismatch",
+			zap.Int("expected_length", packetLen),
+			zap.Int("got_length", bytesRead),
+		)
+		return false
+	}
+
+	return true
+}
+
+// handle attempts to handle an incoming packet from a player.Player's Session.
 // If the packet is not registered in the Router with an appropriate handler,
 // the packet is ignored.
-func (session *Session) Handle(p *player.Player, packet *packets.IncomingPacket) {
-	handler, found := p.Session.GetPacketCommand(packet.HeaderId)
+func (session *Session) handle(p player.Player, packet packets.IncomingPacket) {
+	handler, found := session.router.GetCommand(packet.HeaderId)
 
-	if found {
-		// Avoid using reflection unless the server is in debug mode.
-		var handlerName string
-		if session.server.config.debug {
-			handlerName = GetPacketHandlerName(handler)
-		}
-
-		// If the user is still logging in we don't have their username for logging so,
-		// we check to see if we should log it or not.
-		// TODO possibly just remove this and never log usernames
-		switch {
-		case p.Details.Username != "":
-			session.log.Debug("Incoming Packet",
-				zap.String("player_name", p.Details.Username),
-				zap.String("packet_name", handlerName),
-				zap.String("packet_header", packet.Header),
-				zap.Int("header_id", packet.HeaderId),
-				zap.String("payload", packet.Payload.String()),
-			)
-		default:
-			session.log.Debug("Incoming Packet",
-				zap.String("packet_name", handlerName),
-				zap.String("packet_header", packet.Header),
-				zap.Int("header_id", packet.HeaderId),
-				zap.String("payload", packet.Payload.String()),
-			)
-		}
-
-		handler(p, packet)
-	} else {
-		session.log.Debug("Incoming Packet",
+	if !found {
+		session.log.Debug(
+			"Incoming Packet",
 			zap.String("player_name", p.Details.Username),
 			zap.String("packet_header", packet.Header),
 			zap.Int("header_id", packet.HeaderId),
 			zap.String("payload", packet.Payload.String()),
 		)
+		return
 	}
 
+	// Avoid using reflection unless the server is in debug mode.
+	var handlerName string
+	if session.server.config.debug {
+		handlerName = getPacketHandlerName(handler)
+	}
+
+	// If the user is still logging in we don't have their username for logging so,
+	// we check to see if we should log it or not.
+	// TODO possibly just remove this and never log usernames
+	//switch {
+	//case p.Details.Username != "":
+	//	session.log.Debug(
+	//		"Incoming Packet",
+	//		zap.String("player_name", p.Details.Username),
+	//		zap.String("packet_name", handlerName),
+	//		zap.String("packet_header", packet.Header),
+	//		zap.Int("header_id", packet.HeaderId),
+	//		zap.String("payload", packet.Payload.String()),
+	//	)
+	//default:
+	//	session.log.Debug(
+	//		"Incoming Packet",
+	//		zap.String("packet_name", handlerName),
+	//		zap.String("packet_header", packet.Header),
+	//		zap.Int("header_id", packet.HeaderId),
+	//		zap.String("payload", packet.Payload.String()),
+	//	)
+	//}
+	session.log.Debug(
+		"Incoming Packet",
+		zap.String("packet_name", handlerName),
+		zap.String("packet_header", packet.Header),
+		zap.Int("header_id", packet.HeaderId),
+		zap.String("payload", packet.Payload.String()),
+	)
+
+	handler(p, packet)
 }
 
 // Send finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer
 // before flushing the buffer.
-func (session *Session) Send(caller interface{}, packet *packets.OutgoingPacket) {
+func (session *Session) Send(caller interface{}, packet packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		session.log.Warn("Error writing packet to session buffer",
-			zap.String("packet_name", GetPacketHandlerName(caller)),
+		session.log.Warn(
+			"Error writing packet to session buffer",
+			zap.String("packet_name", getPacketHandlerName(caller)),
 			zap.String("packet_header", packet.Header),
 			zap.Int("header_id", packet.HeaderId),
 			zap.String("payload", packet.Payload.String()),
@@ -188,8 +255,9 @@ func (session *Session) Send(caller interface{}, packet *packets.OutgoingPacket)
 
 	err = session.buffer.buff.Flush()
 	if err != nil {
-		session.log.Warn("Error sending packet to session",
-			zap.String("packet_name", GetPacketHandlerName(caller)),
+		session.log.Warn(
+			"Error sending packet to session",
+			zap.String("packet_name", getPacketHandlerName(caller)),
 			zap.String("packet_header", packet.Header),
 			zap.Int("header_id", packet.HeaderId),
 			zap.String("payload", packet.Payload.String()),
@@ -199,8 +267,9 @@ func (session *Session) Send(caller interface{}, packet *packets.OutgoingPacket)
 		return
 	}
 
-	session.log.Debug("Outgoing Packet",
-		zap.String("packet_name", GetPacketHandlerName(caller)),
+	session.log.Debug(
+		"Outgoing Packet",
+		zap.String("packet_name", getPacketHandlerName(caller)),
 		zap.String("packet_header", packet.Header),
 		zap.Int("header_id", packet.HeaderId),
 		zap.String("payload", packet.Payload.String()),
@@ -208,15 +277,16 @@ func (session *Session) Send(caller interface{}, packet *packets.OutgoingPacket)
 }
 
 // Queue finalizes an outgoing packet with 0x01 and then attempts to write the packet to a Session's buffer.
-func (session *Session) Queue(packet *packets.OutgoingPacket) {
+func (session *Session) Queue(caller interface{}, packet packets.OutgoingPacket) {
 	packet.Finish()
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
 	_, err := session.buffer.buff.Write(packet.Payload.Bytes())
 	if err != nil {
-		session.log.Warn("Error writing packet to session buffer",
-			zap.String("packet_name", GetPacketHandlerName(packet)),
+		session.log.Warn(
+			"Error writing packet to session buffer",
+			zap.String("packet_name", getPacketHandlerName(caller)),
 			zap.String("packet_header", packet.Header),
 			zap.Int("header_id", packet.HeaderId),
 			zap.String("payload", packet.Payload.String()),
@@ -228,14 +298,15 @@ func (session *Session) Queue(packet *packets.OutgoingPacket) {
 }
 
 // Flush attempts flush the packet to a Session's buffer.
-func (session *Session) Flush(caller interface{}, packet *packets.OutgoingPacket) {
+func (session *Session) Flush(caller interface{}, packet packets.OutgoingPacket) {
 	session.buffer.mux.Lock()
 	defer session.buffer.mux.Unlock()
 
 	err := session.buffer.buff.Flush()
 	if err != nil {
-		session.log.Warn("Error sending packet to session",
-			zap.String("packet_name", GetPacketHandlerName(caller)),
+		session.log.Warn(
+			"Error sending packet to session",
+			zap.String("packet_name", getPacketHandlerName(caller)),
 			zap.String("packet_header", packet.Header),
 			zap.Int("header_id", packet.HeaderId),
 			zap.String("payload", packet.Payload.String()),
@@ -245,42 +316,38 @@ func (session *Session) Flush(caller interface{}, packet *packets.OutgoingPacket
 		return
 	}
 
-	session.log.Debug("Outgoing Packet",
-		zap.String("packet_name", GetPacketHandlerName(caller)),
+	session.log.Debug(
+		"Outgoing Packet",
+		zap.String("packet_name", getPacketHandlerName(caller)),
 		zap.String("packet_header", packet.Header),
 		zap.Int("header_id", packet.HeaderId),
 		zap.String("payload", packet.Payload.String()),
 	)
 }
 
-// GetPacketCommand attempts to retrieve a registered Command from the Router.
-// If there is no Command registered in the router with header ID equal to the function parameter,
-// false will be returned.
-func (session *Session) GetPacketCommand(headerId int) (func(*player.Player, *packets.IncomingPacket), bool) {
-	return session.router.GetCommand(headerId)
-}
-
-// Address returns the IP address from a Session's connection
-// Splits the address (e.g. 127.0.0.1:1234) and returns the IP part without the port
-func (session *Session) Address() string {
-	return strings.Split(session.connection.RemoteAddr().String(), ":")[0]
-}
-
 // Close disconnects a Session from the server.
 func (session *Session) Close() {
 	defer session.connection.Close()
 
-	session.log.Debug("Closing session",
-		zap.String("session_addr", session.Address()),
+	session.log.Debug(
+		"Closing session",
+		zap.String("session_addr", session.address()),
 	)
 
 	session.server.RemoveSession(session)
+
 	session.active = false
 }
 
-// GetPacketHandlerName is a hacky way to get the name of the incoming/outgoing packet function call,
+// address returns the IP address from a Session's connection
+// Splits the address (e.g. 127.0.0.1:1234) and returns the IP part without the port
+func (session *Session) address() string {
+	return strings.Split(session.connection.RemoteAddr().String(), ":")[0]
+}
+
+// getPacketHandlerName is a hacky way to get the name of the incoming/outgoing packet function call,
 // this is useful in debugging so you can quickly analyze the flow of packets.
-func GetPacketHandlerName(message interface{}) string {
+func getPacketHandlerName(message interface{}) string {
 	handler := runtime.FuncForPC(reflect.ValueOf(message).Pointer()).Name()
 	sp := strings.Split(handler, "/") // e.g. github.com/jtieri/habbgo/protocol/handlers.GenerateKey
 	s2 := sp[len(sp)-1]               // e.g. handlers.GenerateKey

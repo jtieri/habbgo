@@ -1,10 +1,10 @@
-FROM golang:1.16-alpine AS build-env
+FROM golang:1.18-alpine AS build-env
 
 ENV PACKAGES make
 
 RUN apk add --no-cache $PACKAGES
 
-WORKDIR /go/src/github.com/jtieri/HabbGo
+WORKDIR /go/src/github.com/jtieri/habbgo
 
 # Copy the files from host
 COPY . .

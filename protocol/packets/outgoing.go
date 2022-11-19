@@ -2,6 +2,7 @@ package packets
 
 import (
 	"bytes"
+
 	"github.com/jtieri/habbgo/protocol/encoding"
 )
 
@@ -14,9 +15,9 @@ type OutgoingPacket struct {
 
 // NewOutgoing returns a pointer to a newly allocated OutgoingPacket struct.
 // The two byte Base64 encoded header is written to the packets buffer on creation for quick composition of packets.
-func NewOutgoing(headerId int) *OutgoingPacket {
+func NewOutgoing(headerId int) OutgoingPacket {
 	header := encoding.EncodeB64(headerId, 2)
-	packet := &OutgoingPacket{Header: string(header), HeaderId: headerId, Payload: bytes.NewBuffer(header)}
+	packet := OutgoingPacket{Header: string(header), HeaderId: headerId, Payload: bytes.NewBuffer(header)}
 	return packet
 }
 
@@ -69,7 +70,7 @@ func (packet *OutgoingPacket) WriteDelim(key []byte, delim []byte) {
 
 // String returns the remaining bytes in the packets buffer as a string.
 func (packet *OutgoingPacket) String() string {
-	return string(packet.Payload.Bytes())
+	return packet.Payload.String()
 }
 
 // Finish writes byte 0x01 to the packets buffer to signal the ending of a packet.

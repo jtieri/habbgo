@@ -1,21 +1,22 @@
 package date
 
 import (
-	"fmt"
 	"time"
 )
 
-// GetCurrentDateTime returns the current date and time formatted as dd-MM-yyyy HH:mm:ss
-func GetCurrentDateTime() string {
+const (
+	dateTimeFormat = "02-01-2006 15:04:05"
+	dateFormat     = "02-01-2006"
+)
+
+// CurrentDateTime returns the current date and time formatted as dd-MM-yyyy HH:mm:ss.
+func CurrentDateTime() string {
 	t := time.Now()
-	formatted := fmt.Sprintf("%02d-%02d-%d %02d:%02d:%02d", t.Day(), t.Month(), t.Year(),
-		t.Hour(), t.Minute(), t.Second())
-	return formatted
+	return t.Format(dateTimeFormat)
 }
 
-// GetCurrentDate returns the current date formatted as dd-MM-yyyy
-func GetCurrentDate() string {
+// CurrentDate returns the current date formatted as dd-MM-yyyy.
+func CurrentDate() string {
 	t := time.Now()
-	formatted := fmt.Sprintf("%02d-%02d-%d", t.Day(), t.Month(), t.Year())
-	return formatted
+	return t.Format(dateFormat)
 }

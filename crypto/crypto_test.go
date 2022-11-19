@@ -6,7 +6,7 @@ import (
 
 // TestLoginHash tests that the password hash/salt functions are working as intended
 func TestLoginHash(t *testing.T) {
-	var salt = GenerateRandomSalt(SALTSIZE)
+	var salt = GenerateRandomSalt(SaltSize)
 
 	//loc, _ := time.LoadLocation("UTC")
 	//now := time.Now().In(loc)

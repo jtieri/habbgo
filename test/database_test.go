@@ -26,6 +26,8 @@ func TestDatabaseSetup(t *testing.T) {
 	require.NoError(t, pool.Retry(func() error {
 		var err error
 		db, err = sql.Open("mysql", fmt.Sprintf("root:secret@(localhost:%s)/mysql", resource.GetPort("3306/tcp")))
+		require.NoError(t, err)
+
 		if err != nil {
 			return err
 		}

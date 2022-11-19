@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 )
 
-const SALTSIZE = 16 // default password salt size in bytes
+const SaltSize = 16 // default password salt size in bytes
 
-// GenerateRandomSalt creates a new slice of bytes and generates a random salt using the cryptographically secure CSPRNG
+// GenerateRandomSalt creates a new slice of bytes and generates a random salt using the cryptographically secure CSPRNG.
 func GenerateRandomSalt(saltSize int) []byte {
 	salt := make([]byte, saltSize)
 	if _, err := rand.Read(salt[:]); err != nil {
@@ -18,7 +18,7 @@ func GenerateRandomSalt(saltSize int) []byte {
 }
 
 // HashPassword will concatenate the provided password and salt, then use SHA-512 to hash the password
-// before returning it as a base64 encoded string
+// before returning it as a base64 encoded string.
 func HashPassword(password string, salt []byte) string {
 	var sha512Hasher = sha512.New() // Create a sha-512 hasher
 
@@ -32,7 +32,7 @@ func HashPassword(password string, salt []byte) string {
 	return base64.URLEncoding.EncodeToString(hashedPasswordBytes)
 }
 
-// PasswordsMatch ensures an un-hashed string matches a hashed string once it is combined with a salt & hashed itself
+// PasswordsMatch ensures an un-hashed string matches a hashed string once it is combined with a salt & hashed itself.
 func PasswordsMatch(hashedPassword, unhashedPass string, salt []byte) bool {
 	return hashedPassword == HashPassword(unhashedPass, salt)
 }

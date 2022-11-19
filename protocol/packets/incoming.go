@@ -2,6 +2,7 @@ package packets
 
 import (
 	"bytes"
+
 	"github.com/jtieri/habbgo/protocol/encoding"
 )
 
@@ -13,8 +14,8 @@ type IncomingPacket struct {
 }
 
 // NewIncoming returns a pointer to a newly allocated IncomingPacket struct with its appropriate header information.
-func NewIncoming(rawHeader []byte, payload *bytes.Buffer) *IncomingPacket {
-	packet := &IncomingPacket{Header: string(rawHeader), HeaderId: encoding.DecodeB64(rawHeader), Payload: payload}
+func NewIncoming(rawHeader []byte, payload *bytes.Buffer) IncomingPacket {
+	packet := IncomingPacket{Header: string(rawHeader), HeaderId: encoding.DecodeB64(rawHeader), Payload: payload}
 	return packet
 }
 

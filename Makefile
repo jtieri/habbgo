@@ -1,12 +1,15 @@
-#VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+default: help
 
-all: install
+.PHONY: help
+help: ## Print this help message
+	@echo "Available make commands:"; grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ###############################################################################
 # Build / Install
 ###############################################################################
 
-build: go.sum
+.PHONY: build
+build: go.sum ## Build the binary in ./build
 ifeq ($(OS),Windows_NT)
 	@echo "building habbgo binary..."
 	@go build -mod=readonly $(BUILD_FLAGS) -o build/habbgo.exe ./habbgo
@@ -15,23 +18,28 @@ else
 	@go build -mod=readonly $(BUILD_FLAGS) -o build/habbgo ./habbgo
 endif
 
-install:
+.PHONY: install
+install: ## Install the binary in go/bin
 	@echo "installing habbgo binary..."
-	@go install -mod readonly $(BUILD_FLAGS) .
+	@go generate
+	@go install -race -mod readonly $(BUILD_FLAGS) .
 
-build-habbgo-docker:
+.PHONY: build-docker
+build-docker: ## Build a Docker image for the game server
 	docker build -t jtieri/habbgo:latest -f ./docker/habbgo/Dockerfile .
 
-clean:
+.PHONY: clean
+clean: ## Delete the ./build directory
 	rm -rf build
 
 ###############################################################################
 # Tests / CI
 ###############################################################################
 
-test:
-	@go test -mod readonly -v ./...
+.PHONY: test
+test: ## Run Go tests
+	@go test -mod readonly --race -v ./...
 
-run-docker:
-	docker build -t jtieri/habbgo:latest -f ./docker/habbgo/Dockerfile .
+.PHONY: run-docker
+run-docker: build-habbgo-docker ## Build the Docker image if needed and start container
 	docker run jtieri/habbgo

@@ -6,24 +6,21 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
 	"time"
 
-	"github.com/jtieri/habbgo/game/navigator"
-	"github.com/jtieri/habbgo/game/player"
-	"github.com/jtieri/habbgo/game/room"
+	"github.com/jtieri/habbgo/collections"
+	"github.com/jtieri/habbgo/game/service"
 	"go.uber.org/zap"
 )
 
 // Server is the main game server. It maintains a slice of active sessions connected to the server
 // as well as a reference to all the available game services.
 type Server struct {
-	config   *Config
+	config   Config
 	database *sql.DB
 
-	mux            sync.Mutex
-	activeSessions []*Session
-	services       *Services
+	sessions collections.Cache[string, *Session]
+	services *service.Proxies
 
 	log *zap.Logger
 }
@@ -44,16 +41,18 @@ func New(
 	host string,
 	port, maxConnsPerPlayer int,
 	debug bool,
+	services *service.Proxies,
 ) *Server {
 	return &Server{
-		config: &Config{
+		config: Config{
 			Host:              host,
 			Port:              port,
 			MaxConnsPerPlayer: maxConnsPerPlayer,
 			debug:             debug,
 		},
 		database: database,
-		mux:      sync.Mutex{},
+		sessions: collections.NewCache(make(map[string]*Session)),
+		services: services,
 		log:      log,
 	}
 }
@@ -69,7 +68,6 @@ func (server *Server) Start(ctx context.Context) chan error {
 // for valid requests.
 func (server *Server) HandleConnections(ctx context.Context, errorChan chan error) {
 	defer close(errorChan)
-	defer server.Stop()
 
 	address := fmt.Sprintf("%s:%d", server.config.Host, server.config.Port)
 
@@ -87,7 +85,8 @@ func (server *Server) HandleConnections(ctx context.Context, errorChan chan erro
 	}
 	defer listener.Close()
 
-	server.log.Info("Successfully started the game server",
+	server.log.Info(
+		"Successfully started the game server",
 		zap.String("server_address", listener.Addr().String()),
 	)
 
@@ -111,7 +110,8 @@ func (server *Server) HandleConnections(ctx context.Context, errorChan chan erro
 					continue
 				}
 
-				server.log.Warn("Error trying to handle incoming connection",
+				server.log.Warn(
+					"Error trying to handle incoming connection",
 					zap.Error(err),
 				)
 
@@ -120,26 +120,31 @@ func (server *Server) HandleConnections(ctx context.Context, errorChan chan erro
 
 			// Check that there aren't multiple sessions for a given IP address.
 			// TODO kick a session to make room for the new one instead of not letting new session connect
-			if server.sessionsFromSameAddr(conn) < server.config.MaxConnsPerPlayer {
-				session := NewSession(
-					server.log.With(zap.String("session", conn.LocalAddr().String())),
-					conn,
-					server,
-				)
-
-				server.log.Info("New session created",
-					zap.String("address", conn.LocalAddr().String()),
-					zap.Int("num_sessions_for_usr", server.sessionsFromSameAddr(conn)),
-				)
-
-				server.activeSessions = append(server.activeSessions, session)
-				go session.Listen()
-			} else {
-				server.log.Info("Too many sessions for address",
+			if server.sessionsFromSameAddr(conn.LocalAddr().String()) >= server.config.MaxConnsPerPlayer {
+				server.log.Info(
+					"Too many sessions for address",
 					zap.String("address", conn.LocalAddr().String()),
 				)
 				_ = conn.Close()
+				continue
+
 			}
+
+			session := NewSession(
+				server.log.With(zap.String("session", conn.LocalAddr().String())),
+				conn,
+				server,
+			)
+
+			server.log.Info(
+				"New session created",
+				zap.String("address", conn.LocalAddr().String()),
+				zap.Int("num_sessions_for_usr", server.sessionsFromSameAddr(conn.LocalAddr().String())),
+			)
+
+			server.sessions.Set(session.address(), session)
+
+			go session.listen(ctx)
 		}
 
 	}
@@ -147,68 +152,40 @@ func (server *Server) HandleConnections(ctx context.Context, errorChan chan erro
 
 // RemoveSession removes a Session from the slice of active Sessions and adjusts the slice so that there are no gaps.
 func (server *Server) RemoveSession(session *Session) {
-
-	for i, activeSession := range server.activeSessions {
-		if activeSession.connection.LocalAddr().String() == session.connection.LocalAddr().String() {
-			server.mux.Lock()
-			// This re-adjusts the slice of active connections so there are no gaps in the slice.
-			// i.e. there is an active session at every index in the slice.
-			server.activeSessions[i] = server.activeSessions[len(server.activeSessions)-1]
-			server.activeSessions[len(server.activeSessions)-1] = nil
-			server.activeSessions = server.activeSessions[:len(server.activeSessions)-1]
-			server.mux.Unlock()
-
-			server.log.Info("Active sessions updated",
-				zap.Int("num_active_sessions", len(server.activeSessions)),
-			)
-			break
-		}
-	}
+	server.sessions.Remove(session.address())
+	server.log.Debug(
+		"Active sessions updated",
+		zap.Int("num_active_sessions", server.sessions.Count()),
+	)
 }
 
 // Stop terminates all active sessions and shuts down the game server.
 func (server *Server) Stop() {
-	for _, session := range server.activeSessions {
+	defer server.database.Close()
+
+	// TODO send shutdown signals to the running ActorServices
+	// Need to wait till we know each service is shutdown before we close all the sessions.
+	// Otherwise the Players session will be terminated before the PlayerActor is
+	// finished clearing its task queue which could result in data loss.
+
+	sessions := server.sessions.Items()
+	for _, session := range sessions {
 		session.Close()
+		session = nil
 	}
 
 	server.log.Info("Shutting down game server")
-	os.Exit(0)
 }
 
 // sessionsFromSameAddr returns the number of active Sessions connected to the server for one IP address.
-func (server *Server) sessionsFromSameAddr(conn net.Conn) int {
+func (server *Server) sessionsFromSameAddr(address string) int {
 	count := 0
-	for _, session := range server.activeSessions {
-		if conn.LocalAddr().String() == session.connection.LocalAddr().String() {
+
+	for _, session := range server.sessions.Items() {
+		if address == session.connection.LocalAddr().String() {
 			count++
 		}
 	}
 
 	return count
-}
-
-// BuildGameServices initializes the game Services when starting the Server.
-func (server *Server) BuildGameServices() {
-	ns := navigator.NewNavigatorService(
-		server.log.With(zap.String("service_name", "navigator_service")),
-		server.database,
-	)
-	ns.Build()
-
-	rs := room.NewRoomService(
-		server.log.With(zap.String("service_name", "room_service")),
-		server.database,
-	)
-	rs.Build()
-
-	ps := player.NewPlayerService(
-		server.log.With(zap.String("service_name", "player_service")))
-	ps.Build()
-
-	server.services = &Services{
-		Rooms:     rs,
-		Players:   ps,
-		Navigator: ns,
-	}
 }

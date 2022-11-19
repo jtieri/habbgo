@@ -1,8 +1,9 @@
 package messages
 
 import (
-	"github.com/jtieri/habbgo/protocol/packets"
 	"strconv"
+
+	"github.com/jtieri/habbgo/protocol/packets"
 )
 
 const ( // Used in SESSIONPARAMETERS
@@ -18,28 +19,28 @@ const ( // Used in SESSIONPARAMETERS
 	tutorialEnabled            = 9 // Enables the in-game tutorial when value is set to 1 and disables it when 0
 )
 
-func HELLO() *packets.OutgoingPacket {
+func HELLO() packets.OutgoingPacket {
 	return packets.NewOutgoing(0) // Base64 Header @@
 }
 
-func CRYPTOPARAMETERS() *packets.OutgoingPacket {
+func CRYPTOPARAMETERS() packets.OutgoingPacket {
 	packet := packets.NewOutgoing(277) // Base64 Header DU
 	packet.WriteInt(0)                 // Toggles server->client encryption; 0=off | non-zero=on
 	return packet
 }
 
-func SECRETKEY() *packets.OutgoingPacket {
+func SECRETKEY() packets.OutgoingPacket {
 	packet := packets.NewOutgoing(1)
 	packet.WriteString("dsfsfaefsadfdsffdshdsfgfdfdsafdasefasdfasdfsdgfdsgdsfgsdfgds")
 	return packet
 }
 
-func ENDCRYPTO() *packets.OutgoingPacket {
+func ENDCRYPTO() packets.OutgoingPacket {
 	packet := packets.NewOutgoing(278) // Base 64 Header DV
 	return packet
 }
 
-func SESSIONPARAMETERS() *packets.OutgoingPacket {
+func SESSIONPARAMETERS() packets.OutgoingPacket {
 	packet := packets.NewOutgoing(257) // Base64 Header DA
 
 	params := make(map[int]string, 9)
@@ -68,19 +69,19 @@ func SESSIONPARAMETERS() *packets.OutgoingPacket {
 	return packet
 }
 
-func AVAILABLESETS() *packets.OutgoingPacket {
+func AVAILABLESETS() packets.OutgoingPacket {
 	packet := packets.NewOutgoing(8) // Base64 Header "@H"
 	// TODO make this a configurable option
 	packet.Write("[100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,176,177,178,180,185,190,195,200,205,206,207,210,215,220,225,230,235,240,245,250,255,260,265,266,267,270,275,280,281,285,290,295,300,305,500,505,510,515,520,525,530,535,540,545,550,555,565,570,575,580,585,590,595,596,600,605,610,615,620,625,626,627,630,635,640,645,650,655,660,665,667,669,670,675,680,685,690,695,696,700,705,710,715,720,725,730,735,740]")
 	return packet
 }
 
-func LOGINOK() *packets.OutgoingPacket {
+func LOGINOK() packets.OutgoingPacket {
 	packet := packets.NewOutgoing(3) // Base64 Header @C
 	return packet
 }
 
-func LOCALISED_ERROR(errMsg string) *packets.OutgoingPacket {
+func LOCALISED_ERROR(errMsg string) packets.OutgoingPacket {
 	packet := packets.NewOutgoing(33) // Base64 Header @a
 	packet.Write(errMsg)
 	return packet

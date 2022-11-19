@@ -8,66 +8,82 @@ import (
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
-func Navigate(player *player.Player, packet *packets.IncomingPacket) {
-	roomService := player.Services.RoomService()
+func NAVIGATE(player player.Player, packet packets.IncomingPacket) {
+	roomService := player.Services.RoomService().(*room.RoomServiceProxy)
+
+	navService := player.Services.NavigatorService().(*navigator.NavigatorServiceProxy)
 
 	hideFullRooms := packet.ReadInt() == 1
 	catId := packet.ReadInt()
 
 	if catId >= room.PublicRoomOffset {
-		r := roomService.RoomById(catId - room.PublicRoomOffset)
-		if r != nil {
+		r := roomService.RoomByID(catId - room.PublicRoomOffset)
+		if r.Ready {
 			catId = r.Details.CategoryID
 		}
 	}
 
-	category := player.Services.NavigatorService().CategoryById(catId)
-
-	// TODO also check that access rank isnt higher than players rank
-	if category == nil {
+	category := navService.CategoryByID(catId)
+	if (category == navigator.Category{}) {
 		return
 	}
 
-	subCategories := player.Services.NavigatorService().CategoriesByParentId(category.ID)
-	// sort categories by player count
+	// TODO also check that access rank isnt higher than players rank
 
-	r := player.Services.RoomService().Rooms()
-	currentVisitors := navigator.CurrentVisitors(category, r)
-	maxVisitors := navigator.MaxVisitors(category, r)
+	subCategories := navService.CategoriesByParentID(category.ID)
 
-	var rooms []*room.Room
+	r := roomService.Rooms()
+	currentVisitors := room.CurrentVisitors(category, r)
+	maxVisitors := room.MaxVisitors(category, r)
+
+	var rooms []room.Room
 	if category.IsPublic {
-		for _, r := range roomService.ReplaceRooms(roomService.RoomsByPlayerId(0)) {
-			if r.Details.CategoryID == category.ID && (!hideFullRooms) && r.Details.CurrentVisitors < r.Details.MaxVisitors {
-				// if room is hidden or category id is not equal to the category id we are working with currently continue
-				if r.Details.Hidden || r.Details.CategoryID != category.ID {
-					continue
-				}
-
-				// if we are hiding full rooms in the navigator and the room is full continue
-				if hideFullRooms && r.Details.CurrentVisitors >= r.Details.MaxVisitors {
-					continue
-				}
-
-				rooms = append(rooms, r)
-			}
+		playerRooms := roomService.RoomsByPlayerID(0)
+		if playerRooms == nil {
+			return
 		}
-	} else {
-		// TODO finish private room logic
+
+		replacedRooms := roomService.CheckRoomsQueried(playerRooms)
+		for _, r := range replacedRooms {
+			if r.Details.Hidden {
+				continue
+			}
+
+			if r.Details.CategoryID != category.ID {
+				continue
+			}
+
+			if hideFullRooms && r.Details.CurrentVisitors >= r.Details.MaxVisitors {
+				continue
+			}
+
+			rooms = append(rooms, r)
+		}
 	}
 
-	//// ----------
-	//fmt.Println("--------------------")
-	//fmt.Println(category.Name)
-	//for _, c := range subCategories {
-	//	fmt.Println(c.Name)
-	//}
-	//fmt.Println("--------------------")
-	//for _, r := range rooms {
-	//	fmt.Println(r.Details.Name)
-	//}
+	// TODO finish private room logic
 
 	// TODO sort rooms by player count before sending NAVNODEINFO
 
 	player.Session.Send(messages.NAVNODEINFO, messages.NAVNODEINFO(player, category, hideFullRooms, subCategories, rooms, currentVisitors, maxVisitors))
+}
+
+// GETUSERFLATCATS is sent from the client requesting the navigator.Navigator private room categories that
+// should be visible for the specified user.
+func GETUSERFLATCATS(player player.Player, packet packets.IncomingPacket) {
+	var privateRoomCategories []navigator.Category
+
+	navService := player.Services.NavigatorService().(*navigator.NavigatorServiceProxy)
+
+	// We only want to send category information for private rooms that
+	// should be visible by the player, so don't add categories that are
+	// set with a minimum rank to access that is greater than the players rank.
+	for _, category := range navService.Categories() {
+		if category.IsPublic && player.Details.PlayerRank < category.MinRankAccess {
+			continue
+		}
+		privateRoomCategories = append(privateRoomCategories, category)
+	}
+
+	player.Session.Send(messages.USERFLATCATS, messages.USERFLATCATS(privateRoomCategories))
 }

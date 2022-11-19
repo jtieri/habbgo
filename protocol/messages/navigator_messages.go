@@ -1,7 +1,6 @@
 package messages
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -11,8 +10,8 @@ import (
 	"github.com/jtieri/habbgo/protocol/packets"
 )
 
-func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullRooms bool, subcats []navigator.Category,
-	rooms []*room.Room, currentVisitors int, maxVisitors int) *packets.OutgoingPacket {
+func NAVNODEINFO(player player.Player, parentCat navigator.Category, hideFullRooms bool, subcats []navigator.Category,
+	rooms []room.Room, currentVisitors int, maxVisitors int) packets.OutgoingPacket {
 	p := packets.NewOutgoing(220) // Base64 Header C\
 
 	p.WriteBool(hideFullRooms) // hideCategory
@@ -80,14 +79,29 @@ func NAVNODEINFO(player *player.Player, parentCat *navigator.Category, hideFullR
 			continue
 		}
 
-		r := player.Services.RoomService().Rooms()
-		fmt.Println(subcat.Name)
+		r := player.Services.RoomService().(*room.RoomServiceProxy).Rooms()
 		p.WriteInt(subcat.ID)
 		p.WriteInt(0)
 		p.WriteString(subcat.Name)
-		p.WriteInt(navigator.CurrentVisitors(&subcat, r)) // writeInt currentVisitors
-		p.WriteInt(navigator.MaxVisitors(&subcat, r))     // writeInt maxVisitors
+		p.WriteInt(room.CurrentVisitors(subcat, r)) // writeInt currentVisitors
+		p.WriteInt(room.MaxVisitors(subcat, r))     // writeInt maxVisitors
 		p.WriteInt(parentCat.ID)
+	}
+
+	return p
+}
+
+// USERFLATCATS is sent from the server in response to commands.GETUSERFLATCATS.
+// It contains the Navigator category information for private rooms that should
+// be visible for the specified player.
+func USERFLATCATS(categories []navigator.Category) packets.OutgoingPacket {
+	p := packets.NewOutgoing(221) // C]
+
+	p.WriteInt(len(categories))
+
+	for _, cat := range categories {
+		p.WriteInt(cat.ID)
+		p.WriteString(cat.Name)
 	}
 
 	return p
